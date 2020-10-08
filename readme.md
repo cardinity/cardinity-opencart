@@ -1,7 +1,7 @@
 # Cardinity Opencart module
 Accept card payments using Cardinity payments module for Opencart version 3.0.x shop.
 # For problems with SameSite (failing payments)
-Please read the instructions here (https://github.com/cardinity/cardinity-opencart-3.0.x/tree/samesite-fix).
+Please read the instructions here (https://github.com/cardinity/cardinity-opencart/tree/samesite-fix-3.0.x).
 ## Information for Addons Market
 * **Category**: Payments & Gateways. 
 * **Countries**: Lithuania, United Kingdom, Germany, France, Italy. 
