@@ -68,28 +68,10 @@ class ControllerExtensionPaymentCardinity extends Controller {
 			$data['payment_cardinity_secret'] = $this->config->get('payment_cardinity_secret');
 		}
 
-		if (isset($this->request->post['payment_cardinity_project_key'])) {
-			$data['payment_cardinity_project_key'] = $this->request->post['payment_cardinity_project_key'];
-		} else {
-			$data['payment_cardinity_project_key'] = $this->config->get('payment_cardinity_project_key');
-		}
-
-		if (isset($this->request->post['payment_cardinity_project_secret'])) {
-			$data['payment_cardinity_project_secret'] = $this->request->post['payment_cardinity_project_secret'];
-		} else {
-			$data['payment_cardinity_project_secret'] = $this->config->get('payment_cardinity_project_secret');
-		}
-
 		if (isset($this->request->post['payment_cardinity_debug'])) {
 			$data['payment_cardinity_debug'] = $this->request->post['payment_cardinity_debug'];
 		} else {
 			$data['payment_cardinity_debug'] = $this->config->get('payment_cardinity_debug');
-		}
-
-		if (isset($this->request->post['payment_cardinity_external'])) {
-			$data['payment_cardinity_external'] = $this->request->post['payment_cardinity_external'];
-		} else {
-			$data['payment_cardinity_external'] = $this->config->get('payment_cardinity_external');
 		}
 
 		if (isset($this->request->post['payment_cardinity_total'])) {
@@ -260,7 +242,7 @@ class ControllerExtensionPaymentCardinity extends Controller {
 
 		$check_credentials = true;
 
-		if (version_compare(phpversion(), '5.4.0', '<')) {
+		if (version_compare(phpversion(), '7.3', '<')) {
 			$this->error['warning'] = $this->language->get('error_php_version');
 		}
 
