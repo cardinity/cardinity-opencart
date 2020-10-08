@@ -1,7 +1,7 @@
 # Cardinity Opencart module
 Accept card payments using Cardinity payments module for yourOpencart version 2.3.x shop.
 # For problems with SameSite (failing payments)
-Please read the instructions here ()
+Please read the instructions here (https://github.com/cardinity/cardinity-opencart-2.3.x/tree/samesite-fix).
 ## Information for Addons Market
 **Category**: Payments & Gateways.
 **Countries**: Lithuania, United Kingdom, Germany, France, Italy.
@@ -28,7 +28,7 @@ Simple payment process - you sign the contract with Cardinity and get all servic
 * No monthly fees, no set-up fees
 * Pay only €0.25 + 2.4% per transaction
 # Requirements
-Opencart > 3.0.x , PHP > 7.1
+Opencart > 2.3.x , PHP > 7.1
 # Installation
 1. Download this repository as zip file and extract "admin, catalog, system" folders into opencart main directory.
 2. In admin panel active payment method and enter the keys from Cardinity account.
