@@ -5,6 +5,9 @@ class ControllerExtensionPaymentCardinity extends Controller
 	{
 		$this->load->language('extension/payment/cardinity');
 
+		// SameSite cookie temporary hot fix
+		$this->setSameSiteCookie();
+
 		/**
 		 * Check if external payment option is available,
 		 * if so, then proceed with external checkout options.
@@ -46,6 +49,38 @@ class ControllerExtensionPaymentCardinity extends Controller
 		}
 
 		return $this->load->view('extension/payment/cardinity', $data);
+	}
+
+	public function setSameSiteCookie()
+	{
+		$name = 'SameSite';
+		$value = $this->session->getId();
+		$expire = time() * 60 * 30;
+		$path = ini_get('session.cookie_path');
+		$samesite = 'none';
+		$domain = ini_get('session.cookie_domain');
+		$httponly = $secure = true;
+
+		if (PHP_VERSION_ID < 70300) {
+			setcookie(
+				$name, 
+				$value, 
+				$expire, 
+				"$path; SameSite=$samesite", 
+				$domain, 
+				$secure, 
+				$httponly
+			);
+		} else {
+			setcookie($name, $value, [
+				'expires' => $expire,
+				'path' => $path,
+				'domain' => $domain,
+				'samesite' => $samesite,
+				'secure' => $secure,
+				'httponly' => $httponly,
+			]);
+		}
 	}
 
 	public function externalPaymentCallback()
