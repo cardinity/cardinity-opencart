@@ -64,15 +64,16 @@ class ControllerExtensionPaymentCardinity extends Controller
 		$expire = time() + (10 * 60); // 10 min from now
 		$name = 'cardinitySessionId';
 		$value = $this->session->getId();
-		$path = ini_get('session.cookie_path');		
-		$domain = ini_get('session.cookie_domain');
+				
+		$path = ini_get('session.cookie_path') ?? '';		
+		$domain = ini_get('session.cookie_domain') ?? '';
 		
 		
 		setcookie($name, $value, [
 			'expires' => $expire,
 			'path' => $path,
 			'domain' => $domain,
-			'secure' => false,
+			'secure' => true,
 			'httponly' => false,
 			'samesite' => 'None',
 		]);
