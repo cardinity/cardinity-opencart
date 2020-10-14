@@ -344,15 +344,25 @@ class ControllerExtensionPaymentCardinity extends Controller
 		$this->load->model('extension/payment/cardinity');
 		$this->model_extension_payment_cardinity->log($this->language->get('text_payment_failed'));
 
+
+		//either alert or log or seomthing general
+		$this->session->data['error'] = $alert ?? $log ?? $this->language->get('error_process_order');
+
+		//if log set use it, or use whatever error has
+		$this->model_extension_payment_cardinity->log($log ?? $this->session->data['error']);
+
+/*
 		if ($log) {
 			$this->model_extension_payment_cardinity->log($log);
+		}else{
+
 		}
 
 		if ($alert) {
 			$this->session->data['error'] = $alert;
 		} else {
 			$this->session->data['error'] = $this->language->get('error_process_order');
-		}
+		}*/
 	}
 
 	private function validate()
