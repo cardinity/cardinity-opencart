@@ -81,6 +81,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 	public function externalPaymentCallback()
 	{
+		$this->load->language('extension/payment/cardinity');
 
 		//restore session based on sessionId from cookie
 		$this->session->start($_COOKIE['cardinitySessionId']);
@@ -99,7 +100,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 			$this->finalizeOrder($_POST);
 			$this->response->redirect($this->url->link('checkout/success', '', true));
 		} else {
-			$this->failedOrder($_POST);
+			$this->failedOrder("Card was declined",$this->language->get("error_payment_declined"));
 			$this->response->redirect($this->url->link('checkout/checkout', '', true));
 		}
 	}
