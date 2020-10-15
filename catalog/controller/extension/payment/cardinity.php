@@ -71,21 +71,21 @@ class ControllerExtensionPaymentCardinity extends Controller
 		if($path == null){
 			$path = '';
 		}
-		$samesite = 'Lax';//'none';
+		$samesite = 'none';
 		$domain = ini_get('session.cookie_domain');
 		if($domain == null){
 			$domain = '';
 		}
 		$httponly = true;
-		$secure = false; //true;
+		$secure = true;
 
 		if (PHP_VERSION_ID < 70300) {
 			setcookie(
 				$name,
 				$value,
 				$expire,
-				//"$path; SameSite=$samesite",
-				$path, //testing wtihtou https
+				"$path; SameSite=$samesite",
+				//$path, //use wtihtout https
 				$domain,
 				$secure,
 				$httponly
@@ -101,7 +101,6 @@ class ControllerExtensionPaymentCardinity extends Controller
 			]);
 		}
 
-		$this->testLog(print_r($_COOKIE, true));
 	}
 
 	public function externalPaymentCallback()
@@ -285,8 +284,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 		//restore session from cookie
 		$this->session->start('SameSite',$_COOKIE['SameSite']);
-		$this->testLog("Cookie samesite value :".$_COOKIE['SameSite']);
-
+		
 		$encryption_data = array(
 			'order_id' => $this->session->data['order_id'],
 			'secret'   => $this->config->get('cardinity_secret')
