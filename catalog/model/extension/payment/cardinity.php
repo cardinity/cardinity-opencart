@@ -55,7 +55,7 @@ class ModelExtensionPaymentCardinity extends Model {
 
 		return $attributes;
 	}
-
+	
 	public function finalizePayment($key, $secret, $payment_id, $pares) {
 		$client = Client::create(array(
 			'consumerKey'    => $key,
