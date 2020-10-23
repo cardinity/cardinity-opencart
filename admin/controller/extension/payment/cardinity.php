@@ -58,6 +58,7 @@ class ControllerExtensionPaymentCardinity extends Controller {
 
 		$data['help_debug'] = $this->language->get('help_debug');
 		$data['help_total'] = $this->language->get('help_total');
+		$data['help_external'] = $this->language->get('help_external');
 
 		$data['button_save'] = $this->language->get('button_save');
 		$data['button_cancel'] = $this->language->get('button_cancel');
