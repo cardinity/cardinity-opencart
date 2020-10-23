@@ -7,6 +7,7 @@ This also includes the temporary fix of opencart version 3.0.x. The new versions
 # Instructions on how to update 
 
 1. Download a .zip file of this repository.
+https://github.com/cardinity/cardinity-opencart/releases/download/3.0.x-Samesite/3.0-sessionfix-withexternal.zip
 2. Extract contents of this .zip file in to main folder of your Opencart shop on the server.
 
 # Requirements
