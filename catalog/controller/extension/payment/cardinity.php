@@ -85,7 +85,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 		}
 		$httponly = true;
 		$secure = true;
-		$secure = false;
+		//$secure = false;
 
 		$sessionDataName  = 'sessionData';
 
@@ -107,8 +107,8 @@ class ControllerExtensionPaymentCardinity extends Controller
 				$name,
 				$value,
 				$expire,
-				//"$path; SameSite=$samesite",
-				$path, //use wtihtout https
+				"$path; SameSite=$samesite",
+				//$path, //use wtihtout https
 				$domain,
 				$secure,
 				$httponly
@@ -118,8 +118,8 @@ class ControllerExtensionPaymentCardinity extends Controller
 				$sessionDataName,
 				$sessionDataValue,
 				$expire,
-				//"$path; SameSite=$samesite",
-				$path, //use wtihtout https
+				"$path; SameSite=$samesite",
+				//$path, //use wtihtout https
 				$domain,
 				$secure,
 				$httponly
