@@ -85,15 +85,41 @@ class ControllerExtensionPaymentCardinity extends Controller
 		}
 		$httponly = true;
 		$secure = true;
-		//$secure = false;
+		$secure = false;
+
+		$sessionDataName  = 'sessionData';
+
+		
+		$rawSessionData = $_SESSION[$this->session->getId()];
+		////data serialized
+		$serializedSession = serialize($rawSessionData);
+
+		//add signature to raw data, (signature generated from serialized session)
+		$rawSessionData['signature'] = hash_hmac('sha256', $serializedSession, $this->config->get('cardinity_project_secret'));
+
+		//new datra *(generated from serialized session + signature)
+		$serializedSessionWithSignature  = serialize($rawSessionData);
+
+		$sessionDataValue = base64_encode($serializedSessionWithSignature);
 
 		if (PHP_VERSION_ID < 70300) {
 			setcookie(
 				$name,
 				$value,
 				$expire,
-				"$path; SameSite=$samesite",
-				//$path, //use wtihtout https
+				//"$path; SameSite=$samesite",
+				$path, //use wtihtout https
+				$domain,
+				$secure,
+				$httponly
+			);
+
+			setcookie(
+				$sessionDataName,
+				$sessionDataValue,
+				$expire,
+				//"$path; SameSite=$samesite",
+				$path, //use wtihtout https
 				$domain,
 				$secure,
 				$httponly
@@ -116,7 +142,27 @@ class ControllerExtensionPaymentCardinity extends Controller
 		$this->load->language('extension/payment/cardinity');
 
 		//restore session from cookie
+
+
+		//restore session from cookie
 		$this->session->start('SameSite',$_COOKIE['SameSite']);
+
+		//get cookie data and decode
+		$sessionDataOnCookie = $_COOKIE["sessionData"];
+		$sessionDataOnCookie = unserialize(base64_decode($sessionDataOnCookie));
+
+		//pluck target hash
+		$targetHash = $sessionDataOnCookie['signature'];
+		unset($sessionDataOnCookie['signature']);
+
+		//generate hash
+		$serializedSession = serialize($sessionDataOnCookie);
+		$foundHash = hash_hmac('sha256', $serializedSession, $this->config->get('cardinity_project_secret'));
+				
+		$_SESSION[$_COOKIE['SameSite']] = $sessionDataOnCookie;
+
+
+		//$this->session->start('SameSite',$_COOKIE['SameSite']);
 
 
 		$message = '';
@@ -129,7 +175,9 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 		$signature = hash_hmac('sha256', $message, $this->config->get('cardinity_project_secret'));
 
-		if ($signature == $_POST['signature'] && $_POST['status'] == 'approved') {
+		if ($signature == $_POST['signature'] && 
+			$_POST['status'] == 'approved' && 
+			$foundHash == $targetHash) {
 			$this->finalizeOrder($_POST);
 			$this->response->redirect($this->url->link('checkout/success', '', true));
 		} else {
@@ -221,6 +269,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 					));
 
 					if ($payment->getStatus() == 'pending') {
+						$this->setSameSiteCookie();
 						//3ds
 						$authorization_information = $payment->getAuthorizationInformation();
 
@@ -293,15 +342,27 @@ class ControllerExtensionPaymentCardinity extends Controller
 	public function threeDSecureCallback()
 	{
 		$this->load->model('extension/payment/cardinity');
-
 		$this->load->language('extension/payment/cardinity');
-
 		$success = false;
-
 		$error = '';
+		
 
 		//restore session from cookie
 		$this->session->start('SameSite',$_COOKIE['SameSite']);
+
+		//get cookie data and decode
+		$sessionDataOnCookie = $_COOKIE["sessionData"];
+		$sessionDataOnCookie = unserialize(base64_decode($sessionDataOnCookie));
+
+		//pluck target hash
+		$targetHash = $sessionDataOnCookie['signature'];
+		unset($sessionDataOnCookie['signature']);
+
+		//generate hash
+		$serializedSession = serialize($sessionDataOnCookie);
+		$foundHash = hash_hmac('sha256', $serializedSession, $this->config->get('cardinity_project_secret'));
+				
+		$_SESSION[$_COOKIE['SameSite']] = $sessionDataOnCookie;
 		
 		$encryption_data = array(
 			'order_id' => $this->session->data['order_id'],
@@ -310,7 +371,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 		$hash = $this->encryption->encrypt(json_encode($encryption_data));
 
-		if (hash_equals($hash, $this->request->post['MD'])) {
+		if (hash_equals($hash, $this->request->post['MD']) && hash_equals($foundHash, $targetHash)) {
 
 			if($this->request->post['PaRes'] == '3d-fail'){
 				//3ds attempted but authentication failed
