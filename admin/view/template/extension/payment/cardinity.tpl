@@ -67,7 +67,7 @@
 			<label class="col-sm-2 control-label" for="input-external"><span data-toggle="tooltip" title="<?php echo $help_external; ?>"><?php echo $entry_external; ?></span></label>
 			<div class="col-sm-10">
 			  <select name="cardinity_external" id="input-external" class="form-control">
-				<?php if ($payment_cardinity_external) { ?>
+				<?php if ($cardinity_external) { ?>
 				<option value="1" selected="selected"><?php echo $text_enabled; ?></option>
 				<option value="0"><?php echo $text_disabled; ?></option>
 				<?php } else { ?>

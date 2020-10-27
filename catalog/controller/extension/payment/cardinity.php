@@ -19,7 +19,14 @@ class ControllerExtensionPaymentCardinity extends Controller
 				$data['amount'] = number_format($order_info['total'], 2, '.', '');
 				$data['currency'] = $order_info['currency_code'];
 				$data['country'] = $order_info['shipping_iso_code_2'];
-				$data['order_id'] = $this->session->data['order_id'];
+				$orderId = $this->session->data['order_id'];
+				if ($orderId < 100) {
+					$formattedOrderId = str_pad($orderId, 3, '0', STR_PAD_LEFT);
+				} else {
+					$formattedOrderId = $orderId;
+				}
+				$data['order_id'] = $formattedOrderId; 
+				//$data['order_id'] = $this->session->data['order_id'];
 				$data['description'] = 'OC' . $this->session->data['order_id'];
 				$data['return_url'] = $this->url->link('extension/payment/cardinity/externalPaymentCallback');
 				$attributes = $this->model_extension_payment_cardinity->createExternalPayment($this->config->get('cardinity_project_key'), $this->config->get('cardinity_project_secret'), $data);
@@ -78,6 +85,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 		}
 		$httponly = true;
 		$secure = true;
+		//$secure = false;
 
 		if (PHP_VERSION_ID < 70300) {
 			setcookie(
@@ -148,8 +156,11 @@ class ControllerExtensionPaymentCardinity extends Controller
 		$error = $this->validate();
 
 		if (!$error) {
+
+			
 			$order_info = $this->model_checkout_order->getOrder($this->session->data['order_id']);
 
+			
 			if (strlen($order_info['order_id']) < 2) {
 				$order_id = '0' . $order_info['order_id'];
 			} else {
@@ -195,11 +206,15 @@ class ControllerExtensionPaymentCardinity extends Controller
 			);
 
 			if ($payment) {
+
+
 				if (!in_array($payment->getStatus(), $successful_order_statuses)) {
 					$this->failedOrder($payment->getStatus());
 
 					$json['redirect'] = $this->url->link('checkout/checkout', '', true);
 				} else {
+
+			
 					$this->model_extension_payment_cardinity->addOrder(array(
 						'order_id'   => $this->session->data['order_id'],
 						'payment_id' => $payment->getId()
@@ -223,9 +238,12 @@ class ControllerExtensionPaymentCardinity extends Controller
 							'hash'    => $hash
 						);
 					} elseif ($payment->getStatus() == 'approved') {
+
+						
 						$this->finalizeOrder($payment);
 
 						$json['redirect'] = $this->url->link('checkout/success', '', true);
+						$this->testLog("JSON".print_r($json, true));
 					}
 				}
 			}
@@ -343,7 +361,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 	private function finalizeOrder($payment)
 	{
 		$this->load->model('checkout/order');
-
+		$this->load->model('extension/payment/cardinity');
 		$this->load->language('extension/payment/cardinity');
 
 		$this->model_checkout_order->addOrderHistory($this->session->data['order_id'], $this->config->get('cardinity_order_status_id'));
@@ -355,6 +373,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 	private function failedOrder($log = null, $alert = null)
 	{
 
+		$this->load->model('extension/payment/cardinity');
 		$this->load->language('extension/payment/cardinity');
 
 		$this->model_extension_payment_cardinity->log($this->language->get('text_payment_failed'));
