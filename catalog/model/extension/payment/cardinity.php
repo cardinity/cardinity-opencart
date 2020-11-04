@@ -75,6 +75,25 @@ class ModelExtensionPaymentCardinity extends Model {
 		}
 	}
 
+	public function finalize3dv2Payment($key, $secret, $payment_id, $cres) {
+		$client = Client::create(array(
+			'consumerKey'    => $key,
+			'consumerSecret' => $secret,
+		));
+
+		$method = new Payment\Finalize($payment_id, $cres, true);
+
+		try {
+			$payment = $client->call($method);
+
+			return $payment;
+		} catch (Exception $exception) {
+			$this->exception($exception);
+
+			return false;
+		}
+	}
+
 	public function getMethod($address, $total) {
 		$this->load->language('extension/payment/cardinity');
 
