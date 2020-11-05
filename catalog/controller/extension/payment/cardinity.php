@@ -165,13 +165,13 @@ class ControllerExtensionPaymentCardinity extends Controller
                     "notification_url" => $this->url->link('extension/payment/cardinity/threeDSecureCallbackV2', '', true),
                     "browser_info" => [
                         "accept_header" => "text/html",
-                        "browser_language" => "en-US",
-                        "screen_width" => 1920,
-                        "screen_height" => 1040,
-                        'challenge_window_size' => "390x400",
+                        "browser_language" => $this->request->post['browser_language'],
+                        "screen_width" => (int)$this->request->post['screen_width'],
+                        "screen_height" => (int)$this->request->post['screen_height'],
+                        'challenge_window_size' => "full-screen",
                         "user_agent" => $_SERVER['HTTP_USER_AGENT'],
-                        "color_depth" => 24,
-                        "time_zone" => -60
+                        "color_depth" => (int)$this->request->post['color_depth'],
+                        "time_zone" => (int)$this->request->post['time_zone']
                     ],
                 ],
 			);
