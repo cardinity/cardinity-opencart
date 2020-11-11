@@ -104,35 +104,45 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 		if (PHP_VERSION_ID < 70300) {
 			setcookie(
-				$name,
-				$value,
-				$expire,
-				"$path; SameSite=$samesite",
-				//$path, //use wtihtout https
-				$domain,
-				$secure,
-				$httponly
+				 $name,
+				 $value,
+				 $expire,
+				 "$path; SameSite=$samesite",
+				 //$path, //use wtihtout https
+				 $domain,
+				 $secure,
+				 $httponly
 			);
-
 			setcookie(
-				$sessionDataName,
-				$sessionDataValue,
-				$expire,
-				"$path; SameSite=$samesite",
-				//$path, //use wtihtout https
-				$domain,
-				$secure,
-				$httponly
+				 $sessionDataName,
+				 $sessionDataValue,
+				 $expire,
+				 "$path; SameSite=$samesite",
+				 //$path, //use wtihtout https
+				 $domain,
+				 $secure,
+				 $httponly
 			);
 		} else {
+
 			setcookie($name, $value, [
-				'expires' => $expire,
-				'path' => $path,
-				'domain' => $domain,
-				'samesite' => $samesite,
-				'secure' => $secure,
-				'httponly' => $httponly,
+				 'expires' => $expire,
+				 'path' => $path,
+				 'domain' => $domain,
+				 'samesite' => $samesite,
+				 'secure' => $secure,
+				 'httponly' => $httponly,
 			]);
+
+			setcookie($sessionDataName, $sessionDataValue, [
+				 'expires' => $expire,
+				 'path' => $path,
+				 'domain' => $domain,
+				 'samesite' => $samesite,
+				 'secure' => $secure,
+				 'httponly' => $httponly,
+			]);
+
 		}
 
 	}
