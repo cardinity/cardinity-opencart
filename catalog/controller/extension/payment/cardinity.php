@@ -29,7 +29,13 @@ class ControllerExtensionPaymentCardinity extends Controller
 				//$data['order_id'] = $this->session->data['order_id'];
 				$data['description'] = 'OC' . $this->session->data['order_id'];
 				$data['return_url'] = $this->url->link('extension/payment/cardinity/externalPaymentCallback');
+
 				$attributes = $this->model_extension_payment_cardinity->createExternalPayment($this->config->get('cardinity_project_key'), $this->config->get('cardinity_project_secret'), $data);
+
+				//these two are for website not for api
+				$attributes['button_confirm'] = $this->language->get('button_confirm');
+				$attributes['text_loading'] = $this->language->get('text_loading');
+
 				return $this->load->view('extension/payment/cardinity_external', $attributes);
 			}
 			return $this->load->view('extension/payment/cardinity_external_error');
@@ -45,6 +51,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 		$data['button_confirm'] = $this->language->get('button_confirm');
 
+		$data['text_loading'] = $this->language->get('text_loading');
 
 		$data['months'] = array();
 
@@ -193,7 +200,8 @@ class ControllerExtensionPaymentCardinity extends Controller
 		} else {
 
 			$this->testLog($this->language->get("error_payment_declined"));
-			$this->failedOrder("Card was declined",$this->language->get("error_payment_declined"));
+			$this->failedOrder("Card was declined", $this->language->get("error_payment_declined") );
+
 			$this->response->redirect($this->url->link('checkout/checkout', '', true));
 		}
 	}
@@ -244,6 +252,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 					'cvc'		=> $this->request->post['cvc'],
 					'holder'	=> $this->request->post['holder']
 				),
+				
 			);
 
 			try {
@@ -251,10 +260,16 @@ class ControllerExtensionPaymentCardinity extends Controller
 			} catch (Cardinity\Exception\Declined $exception) {
 				$this->failedOrder($this->language->get('error_payment_declined'), $this->language->get('error_payment_declined'));
 
+				$json['error'] =  array(
+					'warning' => $this->language->get('error_payment_declined')
+				);
 				$json['redirect'] = $this->url->link('checkout/checkout', '', true);
 			} catch (Exception $exception) {
 				$this->failedOrder();
 
+				$json['error'] =  array(
+					'warning' => $this->language->get('error_payment_declined')
+				);
 				$json['redirect'] = $this->url->link('checkout/checkout', '', true);
 			}
 
@@ -288,7 +303,9 @@ class ControllerExtensionPaymentCardinity extends Controller
 							'secret'   => $this->config->get('cardinity_secret')
 						);
 
+						error_reporting(null);
 						$hash = $this->encryption->encrypt(json_encode($encryption_data));
+						//$hash = hash_hmac('sha256', json_encode($encryption_data) , $this->config->get('cardinity_project_secret'));
 
 						$json['3ds'] = array(
 							'url'     => $authorization_information->getUrl(),
@@ -328,7 +345,10 @@ class ControllerExtensionPaymentCardinity extends Controller
 			'secret'   => $this->config->get('cardinity_secret')
 		);
 
+		error_reporting(null);
 		$hash = $this->encryption->encrypt(json_encode($encryption_data));
+		//$hash = hash_hmac('sha256', json_encode($encryption_data) , $this->config->get('cardinity_project_secret'));
+		
 
 		if (hash_equals($hash, $this->request->post['hash'])) {
 			$success = true;
@@ -349,8 +369,10 @@ class ControllerExtensionPaymentCardinity extends Controller
 		$this->response->setOutput($this->load->view('extension/payment/cardinity_3ds', $data));
 	}
 
+	//index.php?route=extension/payment/cardinity/threeDSecureCallback
 	public function threeDSecureCallback()
 	{
+		
 		$this->load->model('extension/payment/cardinity');
 		$this->load->language('extension/payment/cardinity');
 		$success = false;
@@ -379,14 +401,17 @@ class ControllerExtensionPaymentCardinity extends Controller
 			'secret'   => $this->config->get('cardinity_secret')
 		);
 
+		error_reporting(null);		
 		$hash = $this->encryption->encrypt(json_encode($encryption_data));
+		//$hash = hash_hmac('sha256', json_encode($encryption_data) , $this->config->get('cardinity_project_secret'));
 
 		if (hash_equals($hash, $this->request->post['MD']) && hash_equals($foundHash, $targetHash)) {
 
+			
 			if($this->request->post['PaRes'] == '3d-fail'){
 				//3ds attempted but authentication failed
 				//process as failed order
-				$this->testLog("3ds auth failed");//TODO add lang
+				$this->testLog($this->language->get('error_3ds_failed'));
 
 				$this->failedOrder($this->language->get('error_3ds_failed'),$this->language->get('error_3ds_failed'));
 
@@ -397,15 +422,23 @@ class ControllerExtensionPaymentCardinity extends Controller
 				$this->response->setOutput(json_encode($json));
 
 			}else{
+								
 				//3ds success
 				$order = $this->model_extension_payment_cardinity->getOrder($encryption_data['order_id']);
 
 				if ($order && $order['payment_id']) {
-					$payment = $this->model_extension_payment_cardinity->finalizePayment($this->config->get('cardinity_key'), $this->config->get('cardinity_secret'), $order['payment_id'], $this->request->post['PaRes']);
+					$payment = $this->model_extension_payment_cardinity->finalizePayment(
+						$this->config->get('cardinity_key'), 
+						$this->config->get('cardinity_secret'), 
+						$order['payment_id'], 
+						$this->request->post['PaRes']
+					);
 
 					if ($payment && $payment->getStatus() == 'approved') {
+
 						$success = true;
 					} else {
+
 						$error = $this->language->get('error_finalizing_payment');
 					}
 				} else {
@@ -424,6 +457,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 			$this->response->redirect($this->url->link('checkout/success', '', true));
 		} else {
 			$this->failedOrder($error);
+
 
 			$this->response->redirect($this->url->link('checkout/checkout', '', true));
 		}
@@ -455,6 +489,10 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 		if ($alert != null) {
 			$this->session->data['error'] = $alert;
+			/*$this->session->data['error'] = array(
+				'warning' => $alert
+			);*/
+			$this->session->data['error_warning'] = $alert;
 		} else if($log !=null){
 			$this->session->data['error'] = $log;
 		}else{
