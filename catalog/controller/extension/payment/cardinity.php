@@ -34,6 +34,11 @@ class ControllerExtensionPaymentCardinity extends Controller
 				$data['description'] = 'OC' . $this->session->data['order_id'];
 				$data['return_url'] = $this->url->link('extension/payment/cardinity/externalPaymentCallback');
 				$attributes = $this->model_extension_payment_cardinity->createExternalPayment($this->config->get('payment_cardinity_project_key'), $this->config->get('payment_cardinity_project_secret'), $data);
+
+				//these two are for website not for api
+				$attributes['button_confirm'] = $this->language->get('button_confirm');
+				$attributes['text_loading'] = $this->language->get('text_loading');
+
 				return $this->load->view('extension/payment/cardinity_external', $attributes);
 			}
 			return $this->load->view('extension/payment/cardinity_external_error');
@@ -58,6 +63,10 @@ class ControllerExtensionPaymentCardinity extends Controller
 				'value' => strftime('%Y', mktime(0, 0, 0, 1, 1, $i))
 			);
 		}
+
+		//these two are for website not for api
+		$data['button_confirm'] = $this->language->get('button_confirm');
+		$data['text_loading'] = $this->language->get('text_loading');
 
 		return $this->load->view('extension/payment/cardinity', $data);
 	}
@@ -107,7 +116,9 @@ class ControllerExtensionPaymentCardinity extends Controller
 			$message .= $key . $value;
 		}
 
+		error_reporting(null);
 		$signature = hash_hmac('sha256', $message, $this->config->get('payment_cardinity_project_secret'));
+		error_reporting(E_ALL);
 
 		if ($signature == $_POST['signature'] && $_POST['status'] == 'approved') {
 			$this->finalizeOrder($_POST);
@@ -212,7 +223,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 						$this->testLog("is v2 ".$payment->isThreedsV2());
 						//exit();
 
-						if($payment->isThreedsV2()){
+						if($payment->isThreedsV2() && !$payment->isThreedsV1()){
 							//3dsv2
 							$authorization_information = $payment->getThreeDS2AuthorizationInformation();
 
@@ -423,16 +434,66 @@ class ControllerExtensionPaymentCardinity extends Controller
 		$hash = $this->encryption->encrypt($this->config->get('config_encryption'), json_encode($encryption_data));
 		error_reporting(E_ALL);
 
+
 		//proper hash found on callback
 		if (hash_equals($hash, $this->request->post['threeDSSessionData'])) {
 			$order = $this->model_extension_payment_cardinity->getOrder($encryption_data['order_id']);
-
+			
 			if ($order && $order['payment_id']) {
+
+				
 				$payment = $this->model_extension_payment_cardinity->finalize3dv2Payment($this->config->get('payment_cardinity_key'), $this->config->get('payment_cardinity_secret'), $order['payment_id'], $this->request->post['cres']);
 
+			
 				if ($payment && $payment->getStatus() == 'approved') {
 					$success = true;
-				} else {
+				} elseif ($payment && $payment->getStatus() == 'pending') {
+					//3dsv2 failed but v1 is pending
+					
+					//3ds v1 retry
+					$authorization_information = $payment->getAuthorizationInformation();
+
+					//setSessionIdInCookie
+					$this->setSessionIdInCookie();
+
+					
+					/*3d sec form */
+
+					$encryption_data = array(
+						'order_id' => $this->session->data['order_id'],
+						'secret'   => $this->config->get('payment_cardinity_secret')
+					);
+
+					error_reporting(0);
+					$hash = $this->encryption->encrypt($this->config->get('config_encryption'), json_encode($encryption_data));
+					error_reporting(E_ALL);
+
+					$data['url'] = $authorization_information->getUrl();
+					$data['PaReq'] = $authorization_information->getData();
+					$data['TermUrl'] = $this->url->link('extension/payment/cardinity/threeDSecureCallback', '', true);
+					$data['MD'] = $hash;
+					$data['success'] = true;
+					$data['redirect'] = false;
+
+
+					echo '
+					<h3>Threeds v2 validation failed, retrying for v1 in 3 seconds.</h3>
+					<p>If browser does not redirect press "Proceed"</p>
+					<form id="ThreeDForm" name="ThreeDForm" method="POST" action="'.$data['url'].'">
+						<input type="hidden" name="PaReq" value="'.$data['PaReq'] .'" />
+						<input type="hidden" name="TermUrl" value="'.$data['TermUrl'].'" />
+						<input type="hidden" name="MD" value="'.$data['MD'].'" />
+						<input type="submit" value="Proceed" />
+					</form>
+					<script type="text/javascript">
+						window.onload=function(){ 
+							window.setTimeout(document.ThreeDForm.submit.bind(document.ThreeDForm), 3000);
+						};
+					</script>';
+					exit();
+
+					
+				} else  {
 					$error = $this->language->get('error_finalizing_payment');
 				}
 			} else {
@@ -555,3 +616,4 @@ class ControllerExtensionPaymentCardinity extends Controller
 		$this->model_extension_payment_cardinity->log($string . "");
 	}
 }
+
