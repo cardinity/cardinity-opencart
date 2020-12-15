@@ -5,7 +5,7 @@
    <body>
        <div>
             <form name="checkout" method="POST" action="https://checkout.cardinity.com">
-                
+
                 <input type="hidden" name="amount" value="{{ amount }}" />
                 <input type="hidden" name="country" value="{{ country }}" />
                 <input type="hidden" name="currency" value="{{ currency }}" />
@@ -17,10 +17,10 @@
 
                  <div class="buttons">
                     <div class="pull-right">
-                        <input type="submit" value="<?php echo $button_confirm; ?>" id="button-submit" data-loading-text="<?php echo $text_loading; ?>" class="btn btn-primary" />
+                        <input type="submit" value="{{ button_confirm }}" id="button-submit" data-loading-text="{{ text_loading }}" class="btn btn-primary" />
                     </div>
                 </div>
-                
+
             </form>
        </div>
    </body>
