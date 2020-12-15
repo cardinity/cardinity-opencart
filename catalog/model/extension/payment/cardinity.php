@@ -1,4 +1,6 @@
 <?php
+require_once DIR_SYSTEM . 'library/cardinity/vendor/autoload.php';
+
 use Cardinity\Client;
 use Cardinity\Method\Payment;
 use Cardinity\Exception as CardinityException;
@@ -55,7 +57,7 @@ class ModelExtensionPaymentCardinity extends Model {
 
 		return $attributes;
 	}
-	
+
 	public function finalizePayment($key, $secret, $payment_id, $pares) {
 		$client = Client::create(array(
 			'consumerKey'    => $key,

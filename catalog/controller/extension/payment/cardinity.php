@@ -225,7 +225,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 						if($payment->isThreedsV2() && !$payment->isThreedsV1()){
 							//3dsv2
-							$authorization_information = $payment->getThreeDS2AuthorizationInformation();
+							$authorization_information = $payment->getThreeDS2Data();
 
 							//setSessionIdInCookie
 							$this->setSessionIdInCookie();
@@ -245,7 +245,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 								'threeDSSessionData' => $payment->getOrderId(),
 								'hash'    	=> $hash
 							);
-							
+
 						}else{
 							//3ds
 							$authorization_information = $payment->getAuthorizationInformation();
@@ -270,7 +270,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 							);
 						}
 
-						
+
 					} elseif ($payment->getStatus() == 'approved') {
 						$this->finalizeOrder($payment);
 
@@ -438,25 +438,25 @@ class ControllerExtensionPaymentCardinity extends Controller
 		//proper hash found on callback
 		if (hash_equals($hash, $this->request->post['threeDSSessionData'])) {
 			$order = $this->model_extension_payment_cardinity->getOrder($encryption_data['order_id']);
-			
+
 			if ($order && $order['payment_id']) {
 
-				
+
 				$payment = $this->model_extension_payment_cardinity->finalize3dv2Payment($this->config->get('payment_cardinity_key'), $this->config->get('payment_cardinity_secret'), $order['payment_id'], $this->request->post['cres']);
 
-			
+
 				if ($payment && $payment->getStatus() == 'approved') {
 					$success = true;
 				} elseif ($payment && $payment->getStatus() == 'pending') {
 					//3dsv2 failed but v1 is pending
-					
+
 					//3ds v1 retry
 					$authorization_information = $payment->getAuthorizationInformation();
 
 					//setSessionIdInCookie
 					$this->setSessionIdInCookie();
 
-					
+
 					/*3d sec form */
 
 					$encryption_data = array(
@@ -486,13 +486,13 @@ class ControllerExtensionPaymentCardinity extends Controller
 						<input type="submit" value="Proceed" />
 					</form>
 					<script type="text/javascript">
-						window.onload=function(){ 
+						window.onload=function(){
 							window.setTimeout(document.ThreeDForm.submit.bind(document.ThreeDForm), 3000);
 						};
 					</script>';
 					exit();
 
-					
+
 				} else  {
 					$error = $this->language->get('error_finalizing_payment');
 				}
@@ -539,7 +539,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 		//if log set use it, or use whatever error has
 		$this->model_extension_payment_cardinity->log($log ?? $this->session->data['error']);
-	
+
 		/*
 		if ($log) {
 			$this->model_extension_payment_cardinity->log($log);
@@ -616,4 +616,3 @@ class ControllerExtensionPaymentCardinity extends Controller
 		$this->model_extension_payment_cardinity->log($string . "");
 	}
 }
-
