@@ -121,6 +121,15 @@ class ControllerExtensionPaymentCardinity extends Controller
 		error_reporting(E_ALL);
 
 		if ($signature == $_POST['signature'] && $_POST['status'] == 'approved') {
+
+			$this->logTransaction(array(
+				'orderId' => $_POST['order_id'],
+				'transactionId' =>  $_POST['id'],
+				'3dsVersion' => 'unknown (external)',
+				'amount' => $_POST['amount'] ." ".$_POST['currency'],
+				'status' => 'approved'
+			));
+			
 			$this->finalizeOrder($_POST);
 			$this->response->redirect($this->url->link('checkout/success', '', true));
 		} else {
@@ -272,6 +281,16 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 
 					} elseif ($payment->getStatus() == 'approved') {
+
+						$this->logTransaction(array(
+							'orderId' => $this->session->data['order_id'],
+							'transactionId' =>  $payment->getId(),
+							'3dsVersion' => 'none',
+							'amount' => $payment->getAmount()." ".$payment->getCurrency(),
+							'status' => 'approved'
+						));
+
+						
 						$this->finalizeOrder($payment);
 
 						$json['redirect'] = $this->url->link('checkout/success', '', true);
@@ -365,6 +384,15 @@ class ControllerExtensionPaymentCardinity extends Controller
 		}
 
 		if ($success) {
+
+			$this->logTransaction(array(
+				'orderId' => $this->session->data['order_id'],
+				'transactionId' =>  $payment->getId(),
+				'3dsVersion' => 'v1',
+				'amount' => $payment->getAmount()." ".$payment->getCurrency(),
+				'status' => 'approved'
+			));
+
 			$this->finalizeOrder($payment);
 
 			$this->response->redirect($this->url->link('checkout/success', '', true));
@@ -446,6 +474,15 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 
 				if ($payment && $payment->getStatus() == 'approved') {
+
+					$this->logTransaction(array(
+						'orderId' => $this->session->data['order_id'],
+						'transactionId' =>  $payment->getId(),
+						'3dsVersion' => 'v2',
+						'amount' => $payment->getAmount()." ".$payment->getCurrency(),
+						'status' => 'approved'
+					));
+
 					$success = true;
 				} elseif ($payment && $payment->getStatus() == 'pending') {
 					//3dsv2 failed but v1 is pending
@@ -504,6 +541,8 @@ class ControllerExtensionPaymentCardinity extends Controller
 		}
 
 		if ($success) {
+
+			
 			$this->finalizeOrder($payment);
 
 			$this->response->redirect($this->url->link('checkout/success', '', true));
@@ -614,5 +653,14 @@ class ControllerExtensionPaymentCardinity extends Controller
 	{
 		$this->load->model('extension/payment/cardinity');
 		$this->model_extension_payment_cardinity->log($string . "");
+	}
+
+	//debugging tool
+	public function logTransaction($array)
+	{
+		$this->testLog("Logging transaction");
+		$this->testLog(print_r($array, true));
+		$this->load->model('extension/payment/cardinity');
+		$this->model_extension_payment_cardinity->logTransaction($array);
 	}
 }

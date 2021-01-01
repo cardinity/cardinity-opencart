@@ -163,4 +163,10 @@ class ModelExtensionPaymentCardinity extends Model {
 				break;
 		}
 	}
+
+
+	public function logTransaction($data) {
+		$log = new Log('cardinitytrans.log');
+		$log->write($data);
+	}
 }

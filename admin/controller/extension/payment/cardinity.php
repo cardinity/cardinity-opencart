@@ -134,6 +134,11 @@ class ControllerExtensionPaymentCardinity extends Controller {
 		$data['column_left'] = $this->load->controller('common/column_left');
 		$data['footer'] = $this->load->controller('common/footer');
 
+
+		$data['entry_log'] = $this->language->get('entry_log');
+		$data['entry_log_url'] = $this->url->link('extension/payment/cardinity/getTransactions',  'user_token=' . $this->session->data['user_token'] . '&type=payment', true);
+		
+
 		$this->response->setOutput($this->load->view('extension/payment/cardinity', $data));
 	}
 
@@ -306,6 +311,31 @@ class ControllerExtensionPaymentCardinity extends Controller {
 		}
 
 		return !$this->error;
+	}
+
+	public function getTransactions(){
+		
+		// Process download
+		if(file_exists(DIR_LOGS.'cardinitytrans.log')) {
+		   
+			$fileName = 'crd_transactions'.time().'.log';
+		
+			header('Content-Type: application/octet-stream');
+			header('Content-Disposition: attachment; filename='.basename($fileName));
+			header('Expires: 0');
+			header('Cache-Control: must-revalidate');
+			header('Pragma: public');
+			header('Content-Length: ' . filesize(DIR_LOGS.'cardinitytrans.log'));
+			readfile(DIR_LOGS.'cardinitytrans.log');
+			exit;
+
+        } else {
+            http_response_code(404);
+	        die();
+		}
+		
+
+		$this->response->setOutput($this->load->view('extension/payment/cardinity_transactions', $data));
 	}
 
 	public function install() {
