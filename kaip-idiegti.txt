@@ -1,7 +1,7 @@
 Instrukcija kaip idiegti:
 
 1. atsisiuskite sios repozitorijos zip versija.
-2. pasidarykite atsargine failo (/catalog/controller/extension/payment/cardinity.php) kopija.
-3. ikelkite 'catalog' aplanka is zip archyvo i opencart pagrindini aplanka.
+2. pasidarykite atsargine aplanku 'admin', 'catalog', 'system' kopija.
+3. ikelkite 'admin', 'catalog', 'system' aplankus is zip archyvo i opencart pagrindini aplanka.
 
 Jeigu susidursite su nesklandumais, kreipkites pagalbos: techsupport@cardinity.com
