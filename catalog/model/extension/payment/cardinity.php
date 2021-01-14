@@ -1,4 +1,6 @@
 <?php
+require_once DIR_SYSTEM . 'library/cardinity/vendor/autoload.php';
+
 use Cardinity\Client;
 use Cardinity\Method\Payment;
 use Cardinity\Exception as CardinityException;

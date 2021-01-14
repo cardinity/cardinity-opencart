@@ -1,4 +1,6 @@
 <?php
+require_once DIR_SYSTEM . 'library/cardinity/vendor/autoload.php';
+
 class ControllerExtensionPaymentCardinity extends Controller {
 	private $error = array();
 
