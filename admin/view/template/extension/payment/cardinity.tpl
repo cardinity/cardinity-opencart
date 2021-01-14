@@ -22,6 +22,9 @@
     <div class="panel panel-default">
       <div class="panel-heading">
         <h3 class="panel-title"><i class="fa fa-pencil"></i> <?php echo $text_edit; ?></h3>
+		 <div class="pull-right">
+		 	oc-2.3.x-cardinity-1.0.1 External Patch
+		 </div>
       </div>
       <div class="panel-body">
         <form action="<?php echo $action; ?>" method="post" enctype="multipart/form-data" id="form-cardinity" class="form-horizontal">

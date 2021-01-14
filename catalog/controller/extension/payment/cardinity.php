@@ -304,8 +304,8 @@ class ControllerExtensionPaymentCardinity extends Controller
 						);
 
 						error_reporting(null);
-						$hash = $this->encryption->encrypt(json_encode($encryption_data));
-						//$hash = hash_hmac('sha256', json_encode($encryption_data) , $this->config->get('cardinity_project_secret'));
+						//$hash = $this->encryption->encrypt(json_encode($encryption_data));
+						$hash = hash_hmac('sha256', json_encode($encryption_data) , $this->config->get('cardinity_project_secret'));
 
 						$json['3ds'] = array(
 							'url'     => $authorization_information->getUrl(),
@@ -346,8 +346,8 @@ class ControllerExtensionPaymentCardinity extends Controller
 		);
 
 		error_reporting(null);
-		$hash = $this->encryption->encrypt(json_encode($encryption_data));
-		//$hash = hash_hmac('sha256', json_encode($encryption_data) , $this->config->get('cardinity_project_secret'));
+		//$hash = $this->encryption->encrypt(json_encode($encryption_data));
+		$hash = hash_hmac('sha256', json_encode($encryption_data) , $this->config->get('cardinity_project_secret'));
 		
 
 		if (hash_equals($hash, $this->request->post['hash'])) {
@@ -402,8 +402,8 @@ class ControllerExtensionPaymentCardinity extends Controller
 		);
 
 		error_reporting(null);		
-		$hash = $this->encryption->encrypt(json_encode($encryption_data));
-		//$hash = hash_hmac('sha256', json_encode($encryption_data) , $this->config->get('cardinity_project_secret'));
+		//$hash = $this->encryption->encrypt(json_encode($encryption_data));
+		$hash = hash_hmac('sha256', json_encode($encryption_data) , $this->config->get('cardinity_project_secret'));
 
 		if (hash_equals($hash, $this->request->post['MD']) && hash_equals($foundHash, $targetHash)) {
 
