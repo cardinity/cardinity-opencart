@@ -195,7 +195,13 @@ class ControllerExtensionPaymentCardinity extends Controller
 		if ($signature == $_POST['signature'] && 
 			$_POST['status'] == 'approved' && 
 			$foundHash == $targetHash) {
-			$this->finalizeOrder($_POST);
+
+			$trans = array(
+				'payment' => $_POST['id'],
+				'3ds' => 'unknown external',
+				'amount' => $_POST['amount'].' '.$_POST['currency']
+			);
+			$this->finalizeOrder($_POST,$trans );
 			$this->response->redirect($this->url->link('checkout/success', '', true));
 		} else {
 
@@ -315,8 +321,13 @@ class ControllerExtensionPaymentCardinity extends Controller
 						);
 					} elseif ($payment->getStatus() == 'approved') {
 
-						
-						$this->finalizeOrder($payment);
+						$trans = array(
+							'payment' => $payment->getId(),
+							'3ds' => 'none',
+							'amount' => $payment->getAmount().' '.$payment->getCurrency()
+						);
+
+						$this->finalizeOrder($payment, $trans);
 
 						$json['redirect'] = $this->url->link('checkout/success', '', true);
 						$this->testLog("JSON".print_r($json, true));
@@ -452,7 +463,14 @@ class ControllerExtensionPaymentCardinity extends Controller
 		}
 
 		if ($success) {
-			$this->finalizeOrder($payment);
+
+			$trans = array(
+				'payment' => $payment->getId(),
+				'3ds' => 'v1',
+				'amount' => $payment->getAmount().' '.$payment->getCurrency()
+			);
+
+			$this->finalizeOrder($payment, $trans);
 
 			$this->response->redirect($this->url->link('checkout/success', '', true));
 		} else {
@@ -463,13 +481,24 @@ class ControllerExtensionPaymentCardinity extends Controller
 		}
 	}
 
-	private function finalizeOrder($payment)
+	private function finalizeOrder($payment,$trans =false)
 	{
 		$this->load->model('checkout/order');
 		$this->load->model('extension/payment/cardinity');
 		$this->load->language('extension/payment/cardinity');
 
 		$this->model_checkout_order->addOrderHistory($this->session->data['order_id'], $this->config->get('cardinity_order_status_id'));
+
+		if($trans){
+			$this->logTransaction(array(
+				'orderId' => $this->session->data['order_id'],
+				'transactionId' =>  $trans['payment'],
+				'3dsVersion' => $trans['3ds'],
+				'amount' => $trans['amount'],
+				'status' => 'approved'
+			));
+		}
+	
 
 		$this->model_extension_payment_cardinity->log($this->language->get('text_payment_success'));
 		$this->model_extension_payment_cardinity->log($payment);
@@ -561,5 +590,12 @@ class ControllerExtensionPaymentCardinity extends Controller
 	public function testLog($string){
 		$this->load->model('extension/payment/cardinity');
 		$this->model_extension_payment_cardinity->log( $string."");
+	}
+
+	//debugging tool
+	public function logTransaction($array)
+	{
+		$this->load->model('extension/payment/cardinity');
+		$this->model_extension_payment_cardinity->logTransaction($array);
 	}
 }

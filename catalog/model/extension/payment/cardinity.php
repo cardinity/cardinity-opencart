@@ -126,6 +126,13 @@ class ModelExtensionPaymentCardinity extends Model {
 		}
 	}
 
+
+	public function logTransaction($data) {
+		$logFile = 'crd-transactions-'.date('Y-n').'.log';
+		$log = new Log($logFile);
+		$log->write($data);
+	}
+
 	private function exception(Exception $exception) {
 		$this->log($exception->getMessage(), 1, 2);
 

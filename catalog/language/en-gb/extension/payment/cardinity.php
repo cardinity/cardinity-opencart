@@ -25,3 +25,5 @@ $_['error_3ds_failed']			      = '3ds Authentication Failed.';
 $_['button_confirm']					= 'Pay Now';
 $_['text_loading']					= 'Loading...';
 
+$_['entry_log']             = 'Transaction Log';
+$_['entry_log_btn']             = 'Download';

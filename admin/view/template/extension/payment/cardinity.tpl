@@ -155,6 +155,43 @@
         </form>
       </div>
     </div>
+	<div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title"><i class="fa fa-file"></i> <?php echo $entry_log ?></h3>
+      </div>
+      <div class="panel-body">
+
+	  	<form method='post' enctype="multipart/form-data" action='<?php echo $entry_log_action?>'>
+			<table>
+				<tr>
+					<td>
+						<select name="cardinity_trns_month" class="form-control">
+							<?php
+							for($i = 1; $i<=12; $i++){
+								echo '<option value="'.$i.'">'.$i.'</option>';
+							}
+							?>
+						</select>
+					</td>
+					<td>
+						<select name="cardinity_trns_year" class="form-control">
+							<?php
+							$yearNow = (int) date('Y');
+							for($i = $yearNow; $i<= $yearNow + 30; $i++){
+								echo '<option value="'.$i.'">'.$i.'</option>';
+							}
+							?>
+						</select>
+					</td>
+					<td>
+						<button type='submit' class="btn btn-primary" target='_blank'> <i class="fa fa-download"></i> Download Log</button>
+					</td>
+				</tr>
+			</table>
+		</form>
+	  	
+	  </div>
+    </div>
   </div>
 </div>
 <script type="text/javascript"><!--

@@ -56,7 +56,10 @@ class ControllerExtensionPaymentCardinity extends Controller {
 
 
 		/* external payment */
+		$data['entry_log'] = $this->language->get('entry_log');
+		$data['entry_log_action'] = $this->url->link('extension/payment/cardinity/getTransactions', 'token=' . $this->session->data['token'], true);
 
+		
 
 		$data['help_debug'] = $this->language->get('help_debug');
 		$data['help_total'] = $this->language->get('help_total');
@@ -180,11 +183,39 @@ class ControllerExtensionPaymentCardinity extends Controller {
 			$data['cardinity_sort_order'] = $this->config->get('cardinity_sort_order');
 		}
 
+		
+
 		$data['header'] = $this->load->controller('common/header');
 		$data['column_left'] = $this->load->controller('common/column_left');
 		$data['footer'] = $this->load->controller('common/footer');
 
 		$this->response->setOutput($this->load->view('extension/payment/cardinity', $data));
+	}
+
+	public function getTransactions(){
+
+
+		$fileName = 'crd-transactions-'.$this->request->post['cardinity_trns_year'].'-'. $this->request->post['cardinity_trns_month'];
+		$fileToDownload =  $fileName .'.log';
+		
+		// Process download
+		if(file_exists(DIR_LOGS.$fileToDownload)) {
+		   
+			$downloadName = $fileName. time(). '.log';
+		
+			header('Content-Type: application/octet-stream');
+			header('Content-Disposition: attachment; filename='.basename($downloadName));
+			header('Expires: 0');
+			header('Cache-Control: must-revalidate');
+			header('Pragma: public');
+			header('Content-Length: ' . filesize(DIR_LOGS.$fileToDownload));
+			readfile(DIR_LOGS.$fileToDownload);
+			exit;
+
+        } else {
+            http_response_code(404);
+	        die();
+		}
 	}
 
 	public function order() {

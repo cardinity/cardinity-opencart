@@ -43,6 +43,9 @@ $_['help_debug']			= 'Enabling debug will write sensitive data to a log file. Yo
 $_['help_total']			= 'The checkout total the order must reach before this payment method becomes active.';
 $_['help_external']			= 'If you enable external checkout, your users will have to leave your website and complete the payment at Cardinity external checkout page. ';
 
+$_['entry_log']             = 'Transaction Log';
+$_['entry_log_btn']             = 'Download';
+
 // Button
 $_['button_refund']			= 'Refund';
 
@@ -54,3 +57,4 @@ $_['error_php_version']		= 'Minimum version of PHP 5.4.0 is required!';
 $_['error_permission']		= 'Warning: You do not have permission to modify payment Cardinity!';
 $_['error_connection']		= 'There was a problem establishing a connection to the Cardinity API. Please check your Key and Secret settings.';
 $_['error_warning']			= 'Warning: Please check the form carefully for errors!';
+
