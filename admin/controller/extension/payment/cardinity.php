@@ -136,7 +136,8 @@ class ControllerExtensionPaymentCardinity extends Controller {
 
 
 		$data['entry_log'] = $this->language->get('entry_log');
-		$data['entry_log_url'] = $this->url->link('extension/payment/cardinity/getTransactions',  'user_token=' . $this->session->data['user_token'] . '&type=payment', true);
+		$data['yearNow'] = (int) Date("Y");
+		$data['entry_log_action'] = $this->url->link('extension/payment/cardinity/getTransactions',  'user_token=' . $this->session->data['user_token'] . '&type=payment', true);
 		
 
 		$this->response->setOutput($this->load->view('extension/payment/cardinity', $data));
@@ -315,25 +316,27 @@ class ControllerExtensionPaymentCardinity extends Controller {
 
 	public function getTransactions(){
 		
+		$fileName = 'crd-transactions-'.$this->request->post['cardinity_trns_year'].'-'. $this->request->post['cardinity_trns_month'];
+		$fileToDownload =  $fileName .'.log';
+		
 		// Process download
-		if(file_exists(DIR_LOGS.'cardinitytrans.log')) {
+		if(file_exists(DIR_LOGS.$fileToDownload)) {
 		   
-			$fileName = 'crd_transactions'.time().'.log';
+			$downloadName = $fileName. time(). '.log';
 		
 			header('Content-Type: application/octet-stream');
-			header('Content-Disposition: attachment; filename='.basename($fileName));
+			header('Content-Disposition: attachment; filename='.basename($downloadName));
 			header('Expires: 0');
 			header('Cache-Control: must-revalidate');
 			header('Pragma: public');
-			header('Content-Length: ' . filesize(DIR_LOGS.'cardinitytrans.log'));
-			readfile(DIR_LOGS.'cardinitytrans.log');
+			header('Content-Length: ' . filesize(DIR_LOGS.$fileToDownload));
+			readfile(DIR_LOGS.$fileToDownload);
 			exit;
 
         } else {
             http_response_code(404);
 	        die();
-		}
-		
+		}				
 
 		$this->response->setOutput($this->load->view('extension/payment/cardinity_transactions', $data));
 	}

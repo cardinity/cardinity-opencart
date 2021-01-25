@@ -21,7 +21,7 @@
     {% endif %}
     <div class="panel panel-default">
       <div class="panel-heading">
-        <h3 class="panel-title"><i class="fa fa-pencil"></i> {{ text_edit }}</h3><span class='pull-right'>3.0.x-patch-4</span>
+        <h3 class="panel-title"><i class="fa fa-pencil"></i> {{ text_edit }}</h3><span class='pull-right'>3.0.x-patch-5</span>
       </div>
       <div class="panel-body">
         <form action="{{ action }}" method="post" enctype="multipart/form-data" id="form-payment" class="form-horizontal">
@@ -157,7 +157,30 @@
         <h3 class="panel-title"><i class="fa fa-file"></i> {{ entry_log }}</h3>
       </div>
       <div class="panel-body">
-	  	<a class="btn btn-primary" href="{{ entry_log_url }}" target='_blank'> <i class="fa fa-download"></i> Download Log</a>
+		<form method='post' enctype="multipart/form-data" action='{{entry_log_action}}'>
+				<table>
+					<tr>
+						<td>
+							<select name="cardinity_trns_month" class="form-control">
+								{% for i in 1..12 %}
+									<option value="{{ i }}">{{ i }}</option>
+								{% endfor %}
+							</select>
+						</td>
+						<td>
+							<select name="cardinity_trns_year" class="form-control">
+								{% for y in yearNow..yearNow+30 %}
+									<option value="{{ y }}">{{ y }}</option>
+								{% endfor %}								
+							</select>
+						</td>
+						<td>
+							<button type='submit' class="btn btn-primary" target='_blank'> <i class="fa fa-download"></i> Download Log</button>
+						</td>
+					</tr>
+				</table>
+			</form>
+
 	  </div>
     </div>
 	
