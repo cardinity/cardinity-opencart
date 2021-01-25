@@ -334,11 +334,9 @@ class ControllerExtensionPaymentCardinity extends Controller {
 			exit;
 
         } else {
-            http_response_code(404);
-	        die();
+			$this->response->redirect($this->url->link('extension/payment/cardinity', 'user_token=' . $this->session->data['user_token'], true));
 		}				
 
-		$this->response->setOutput($this->load->view('extension/payment/cardinity_transactions', $data));
 	}
 
 	public function install() {
