@@ -32,7 +32,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 				}
 				$data['order_id'] = $formattedOrderId; //$this->session->data['order_id'];
 				$data['description'] = 'OC' . $this->session->data['order_id'];
-				$data['return_url'] = $this->url->link('extension/payment/cardinity/externalPaymentCallback');
+				$data['return_url'] = $this->url->link('extension/payment/cardinity/externalPaymentCallback', '', true);
 				$attributes = $this->model_extension_payment_cardinity->createExternalPayment($this->config->get('payment_cardinity_project_key'), $this->config->get('payment_cardinity_project_secret'), $data);
 
 				//these two are for website not for api
@@ -103,7 +103,8 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 	public function externalPaymentCallback()
 	{
-		$this->load->language('extension/payment/cardinity');
+		$this->load->language('extension/payment/cardinity');		
+		$this->load->model('extension/payment/cardinity');
 
 		//restore session based on sessionId from cookie
 		$this->session->start($_COOKIE['cardinitySessionId']);
@@ -122,6 +123,16 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 		if ($signature == $_POST['signature'] && $_POST['status'] == 'approved') {
 
+
+			$this->model_extension_payment_cardinity->addOrder(array(
+				'order_id'   => $_POST['order_id'],
+				'payment_id' =>$_POST['id'],
+			));
+			$this->model_extension_payment_cardinity->updateOrder(array(
+				'payment_status' => 'approved_external',
+				'payment_id' =>$_POST['id'],
+			));
+
 			$this->logTransaction(array(
 				'orderId' => $_POST['order_id'],
 				'transactionId' =>  $_POST['id'],
@@ -133,6 +144,16 @@ class ControllerExtensionPaymentCardinity extends Controller
 			$this->finalizeOrder($_POST);
 			$this->response->redirect($this->url->link('checkout/success', '', true));
 		} else {
+
+			$this->model_extension_payment_cardinity->addOrder(array(
+				'order_id'   => $_POST['order_id'],
+				'payment_id' =>$_POST['id'],
+			));
+			$this->model_extension_payment_cardinity->updateOrder(array(
+				'payment_status' => 'failed_external',
+				'payment_id' =>$_POST['id'],
+			));
+
 			$this->failedOrder("Card was declined", $this->language->get("error_payment_declined"));
 			$this->response->redirect($this->url->link('checkout/checkout', '', true));
 		}
@@ -255,6 +276,11 @@ class ControllerExtensionPaymentCardinity extends Controller
 								'hash'    	=> $hash
 							);
 
+							$this->model_extension_payment_cardinity->updateOrder(array(
+								'payment_status'   => 'pending_3dsv2',
+								'payment_id' => $payment->getId()
+							));
+
 						}else{
 							//3ds
 							$authorization_information = $payment->getAuthorizationInformation();
@@ -277,10 +303,20 @@ class ControllerExtensionPaymentCardinity extends Controller
 								'TermUrl' => $this->url->link('extension/payment/cardinity/threeDSecureCallback', '', true),
 								'hash'    => $hash
 							);
+
+							$this->model_extension_payment_cardinity->updateOrder(array(
+								'payment_status'   => 'pending_3dsv1',
+								'payment_id' => $payment->getId()
+							));
 						}
 
 
 					} elseif ($payment->getStatus() == 'approved') {
+
+						$this->model_extension_payment_cardinity->updateOrder(array(
+							'payment_status'   => 'approved_non3ds',
+							'payment_id' => $payment->getId()
+						));
 
 						$this->logTransaction(array(
 							'orderId' => $this->session->data['order_id'],
@@ -374,6 +410,12 @@ class ControllerExtensionPaymentCardinity extends Controller
 				if ($payment && $payment->getStatus() == 'approved') {
 					$success = true;
 				} else {
+
+					$this->model_extension_payment_cardinity->updateOrder(array(
+						'payment_status'   => 'failed_3dsv1',
+						'payment_id' => $order['payment_id']
+					));
+
 					$error = $this->language->get('error_finalizing_payment');
 				}
 			} else {
@@ -384,6 +426,11 @@ class ControllerExtensionPaymentCardinity extends Controller
 		}
 
 		if ($success) {
+
+			$this->model_extension_payment_cardinity->updateOrder(array(
+				'payment_status'   => 'approved_3dsv1',
+				'payment_id' => $payment->getId()
+			));
 
 			$this->logTransaction(array(
 				'orderId' => $this->session->data['order_id'],
@@ -397,6 +444,8 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 			$this->response->redirect($this->url->link('checkout/success', '', true));
 		} else {
+
+			
 			$this->failedOrder($error);
 
 			$this->response->redirect($this->url->link('checkout/checkout', '', true));
@@ -470,69 +519,85 @@ class ControllerExtensionPaymentCardinity extends Controller
 			if ($order && $order['payment_id']) {
 
 
-				$payment = $this->model_extension_payment_cardinity->finalize3dv2Payment($this->config->get('payment_cardinity_key'), $this->config->get('payment_cardinity_secret'), $order['payment_id'], $this->request->post['cres']);
+				if($order && strpos($order['payment_status'], 'approved') !== false){
+					//payment already finalized
+					$success = true;	
+				}else{
 
+					$payment = $this->model_extension_payment_cardinity->finalize3dv2Payment($this->config->get('payment_cardinity_key'), $this->config->get('payment_cardinity_secret'), $order['payment_id'], $this->request->post['cres']);
 
-				if ($payment && $payment->getStatus() == 'approved') {
+					if ($payment && $payment->getStatus() == 'approved') {
 
-					$this->logTransaction(array(
-						'orderId' => $this->session->data['order_id'],
-						'transactionId' =>  $payment->getId(),
-						'3dsVersion' => 'v2',
-						'amount' => $payment->getAmount()." ".$payment->getCurrency(),
-						'status' => 'approved'
-					));
-
-					$success = true;
-				} elseif ($payment && $payment->getStatus() == 'pending') {
-					//3dsv2 failed but v1 is pending
-
-					//3ds v1 retry
-					$authorization_information = $payment->getAuthorizationInformation();
-
-					//setSessionIdInCookie
-					$this->setSessionIdInCookie();
-
-
-					/*3d sec form */
-
-					$encryption_data = array(
-						'order_id' => $this->session->data['order_id'],
-						'secret'   => $this->config->get('payment_cardinity_secret')
-					);
-
-					error_reporting(0);
-					$hash = $this->encryption->encrypt($this->config->get('config_encryption'), json_encode($encryption_data));
-					error_reporting(E_ALL);
-
-					$data['url'] = $authorization_information->getUrl();
-					$data['PaReq'] = $authorization_information->getData();
-					$data['TermUrl'] = $this->url->link('extension/payment/cardinity/threeDSecureCallback', '', true);
-					$data['MD'] = $hash;
-					$data['success'] = true;
-					$data['redirect'] = false;
-
-
-					echo '
-					<h3>Threeds v2 validation failed, retrying for v1 in 3 seconds.</h3>
-					<p>If browser does not redirect press "Proceed"</p>
-					<form id="ThreeDForm" name="ThreeDForm" method="POST" action="'.$data['url'].'">
-						<input type="hidden" name="PaReq" value="'.$data['PaReq'] .'" />
-						<input type="hidden" name="TermUrl" value="'.$data['TermUrl'].'" />
-						<input type="hidden" name="MD" value="'.$data['MD'].'" />
-						<input type="submit" value="Proceed" />
-					</form>
-					<script type="text/javascript">
-						window.onload=function(){
-							window.setTimeout(document.ThreeDForm.submit.bind(document.ThreeDForm), 3000);
-						};
-					</script>';
-					exit();
-
-
-				} else  {
-					$error = $this->language->get('error_finalizing_payment');
+						$this->model_extension_payment_cardinity->updateOrder(array(
+							'payment_status'   => 'approved_3dsv2',
+							'payment_id' => $payment->getId()
+						));
+	
+						$this->logTransaction(array(
+							'orderId' => $this->session->data['order_id'],
+							'transactionId' =>  $payment->getId(),
+							'3dsVersion' => 'v2',
+							'amount' => $payment->getAmount()." ".$payment->getCurrency(),
+							'status' => 'approved'
+						));
+	
+						$success = true;
+					} elseif ($payment && $payment->getStatus() == 'pending') {
+						//3dsv2 failed but v1 is pending
+	
+						$this->model_extension_payment_cardinity->updateOrder(array(
+							'payment_status'   => 'fallback_3dsv1',
+							'payment_id' => $payment->getId()
+						));
+	
+						//3ds v1 retry
+						$authorization_information = $payment->getAuthorizationInformation();
+	
+						//setSessionIdInCookie
+						$this->setSessionIdInCookie();
+	
+	
+						/*3d sec form */
+	
+						$encryption_data = array(
+							'order_id' => $this->session->data['order_id'],
+							'secret'   => $this->config->get('payment_cardinity_secret')
+						);
+	
+						error_reporting(0);
+						$hash = $this->encryption->encrypt($this->config->get('config_encryption'), json_encode($encryption_data));
+						error_reporting(E_ALL);
+	
+						$data['url'] = $authorization_information->getUrl();
+						$data['PaReq'] = $authorization_information->getData();
+						$data['TermUrl'] = $this->url->link('extension/payment/cardinity/threeDSecureCallback', '', true);
+						$data['MD'] = $hash;
+						$data['success'] = true;
+						$data['redirect'] = false;
+	
+	
+						echo '
+						<h3>Threeds v2 validation failed, retrying for v1 in 3 seconds.</h3>
+						<p>If browser does not redirect press "Proceed"</p>
+						<form id="ThreeDForm" name="ThreeDForm" method="POST" action="'.$data['url'].'">
+							<input type="hidden" name="PaReq" value="'.$data['PaReq'] .'" />
+							<input type="hidden" name="TermUrl" value="'.$data['TermUrl'].'" />
+							<input type="hidden" name="MD" value="'.$data['MD'].'" />
+							<input type="submit" value="Proceed" />
+						</form>
+						<script type="text/javascript">
+							window.onload=function(){
+								window.setTimeout(document.ThreeDForm.submit.bind(document.ThreeDForm), 3000);
+							};
+						</script>';
+						exit();
+	
+	
+					} else  {
+						$error = $this->language->get('error_finalizing_payment');
+					}
 				}
+								
 			} else {
 				$error = $this->language->get('error_unknown_order_id');
 			}
@@ -541,12 +606,12 @@ class ControllerExtensionPaymentCardinity extends Controller
 		}
 
 		if ($success) {
-
 			
 			$this->finalizeOrder($payment);
 
 			$this->response->redirect($this->url->link('checkout/success', '', true));
 		} else {
+
 			$this->failedOrder($error);
 
 			$this->response->redirect($this->url->link('checkout/checkout', '', true));

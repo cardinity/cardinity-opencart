@@ -89,6 +89,7 @@ class ModelExtensionPaymentCardinity extends Model {
 			  `cardinity_order_id` INT(11) NOT NULL AUTO_INCREMENT,
 			  `order_id` INT(11) NOT NULL,
 			  `payment_id` VARCHAR(255),
+			  `payment_status` VARCHAR(255),
 			  PRIMARY KEY (`cardinity_order_id`)
 			) ENGINE=MyISAM DEFAULT COLLATE=utf8_general_ci;
 		");

@@ -16,6 +16,11 @@ class ModelExtensionPaymentCardinity extends Model {
 		return $query->row;
 	}
 
+	public function updateOrder($data) {
+		$this->db->query("UPDATE `" . DB_PREFIX . "cardinity_order` SET `payment_status` = '" . $this->db->escape($data['payment_status']) . "' WHERE `payment_id` = '" . $this->db->escape($data['payment_id']) . "'");
+	}
+
+
 	public function createPayment($key, $secret, $payment_data) {
 		$client = Client::create(array(
 			'consumerKey'    => $key,
