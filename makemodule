@@ -1,7 +1,7 @@
 #!/bin/bash
 # A simple script to generate opencart extension
 rm -r ./upload
-rm oc-2.3.x-cardinity-1.0.1.ocmod.zip
+rm oc-2.3.x-cardinity-1.1.0.ocmod.zip
 cd system/library/cardinity
 composer install
 cd ../../../
@@ -10,5 +10,4 @@ cp -R admin ./upload/admin
 cp -R catalog ./upload/catalog
 cp -R system ./upload/system
 cp install.xml ./upload/install.xml
-zip -r oc-2.3.x-cardinity-1.0.1.ocmod.zip upload
-
+zip -r oc-2.3.x-cardinity-1.1.0.ocmod.zip upload

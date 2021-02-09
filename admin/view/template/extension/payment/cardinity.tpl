@@ -23,10 +23,10 @@
       <div class="panel-heading">
         <h3 class="panel-title"><i class="fa fa-pencil"></i> <?php echo $text_edit; ?></h3>
 		 <div class="pull-right">
-		 	oc-2.3.x-cardinity-1.0.1 External Patch
+		 	cardinity-v1.1.0 for oc-2.3.x
 		 </div>
       </div>
-      <div class="panel-body">
+      <div class="panel-body">	  
         <form action="<?php echo $action; ?>" method="post" enctype="multipart/form-data" id="form-cardinity" class="form-horizontal">
 		  <div class="form-group required">
 			<label class="col-sm-2 control-label" for="input-key"><?php echo $entry_key; ?></label>
@@ -66,19 +66,24 @@
 			  <?php } ?>
 			</div>
 		  </div>
+		  
 		  <div class="form-group">
 			<label class="col-sm-2 control-label" for="input-external"><span data-toggle="tooltip" title="<?php echo $help_external; ?>"><?php echo $entry_external; ?></span></label>
 			<div class="col-sm-10">
 			  <select name="cardinity_external" id="input-external" class="form-control">
-				<?php if ($cardinity_external) { ?>
+			  	<option value="1" selected="selected"><?php echo $text_enabled; ?></option>
+
+				<?php /* if ($cardinity_external) { ?>
 				<option value="1" selected="selected"><?php echo $text_enabled; ?></option>
 				<option value="0"><?php echo $text_disabled; ?></option>
 				<?php } else { ?>
 				<option value="1"><?php echo $text_enabled; ?></option>
 				<option value="0" selected="selected"><?php echo $text_disabled; ?></option>
-				<?php } ?>
+				<?php }*/ ?>
+
 			  </select>
 			</div>
+			
 		  </div>
 		<!-- Added for external payment -->
 

@@ -12,7 +12,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 		 * Check if external payment option is available,
 		 * if so, then proceed with external checkout options.
 		 */
-		if ($this->config->get('cardinity_external') == 1) {
+		if ($this->config->get('cardinity_external') == 1 ) {
 			$order_info = $this->model_checkout_order->getOrder($this->session->data['order_id']);
 			if ($order_info) {
 				$this->load->model('extension/payment/cardinity');
@@ -28,7 +28,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 				$data['order_id'] = $formattedOrderId; 
 				//$data['order_id'] = $this->session->data['order_id'];
 				$data['description'] = 'OC' . $this->session->data['order_id'];
-				$data['return_url'] = $this->url->link('extension/payment/cardinity/externalPaymentCallback');
+				$data['return_url'] = $this->url->link('extension/payment/cardinity/externalPaymentCallback','', true);
 
 				$attributes = $this->model_extension_payment_cardinity->createExternalPayment($this->config->get('cardinity_project_key'), $this->config->get('cardinity_project_secret'), $data);
 
@@ -78,6 +78,8 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 	public function setSameSiteCookie()
 	{
+		$this->load->model('extension/payment/cardinity');
+
 		$name = 'SameSite';
 		$value = $this->session->getId();
 		$expire = time() + 60 * 30;
@@ -97,7 +99,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 		$sessionDataName  = 'sessionData';
 
 		
-		$rawSessionData = $_SESSION[$this->session->getId()];
+		/*$rawSessionData = $_SESSION[$this->session->getId()];
 		////data serialized
 		$serializedSession = serialize($rawSessionData);
 
@@ -108,6 +110,26 @@ class ControllerExtensionPaymentCardinity extends Controller
 		$serializedSessionWithSignature  = serialize($rawSessionData);
 
 		$sessionDataValue = base64_encode($serializedSessionWithSignature);
+*/
+		
+		$rawSessionData = $_SESSION[$this->session->getId()];
+		////data serialized
+		$serializedSession = json_encode($rawSessionData);
+
+		//add signature to raw data, (signature generated from serialized session)
+		$rawSessionData['signature'] = hash_hmac('sha256', $serializedSession, $this->config->get('cardinity_project_secret'));
+
+		//new datra *(generated from serialized session + signature)
+		$serializedSessionWithSignature  = json_encode($rawSessionData);
+
+		$sessionDataValue = base64_encode($serializedSessionWithSignature);
+
+		$this->model_extension_payment_cardinity->storeSession(array(
+			'session_id' => $this->session->getId(),
+			'session_data' => $sessionDataValue
+		));
+
+
 
 		if (PHP_VERSION_ID < 70300) {
 			setcookie(
@@ -120,7 +142,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 				 $secure,
 				 $httponly
 			);
-			setcookie(
+			/*setcookie(
 				 $sessionDataName,
 				 $sessionDataValue,
 				 $expire,
@@ -129,7 +151,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 				 $domain,
 				 $secure,
 				 $httponly
-			);
+			);*/
 		} else {
 
 			setcookie($name, $value, [
@@ -141,14 +163,14 @@ class ControllerExtensionPaymentCardinity extends Controller
 				 'httponly' => $httponly,
 			]);
 
-			setcookie($sessionDataName, $sessionDataValue, [
+			/*setcookie($sessionDataName, $sessionDataValue, [
 				 'expires' => $expire,
 				 'path' => $path,
 				 'domain' => $domain,
 				 'samesite' => $samesite,
 				 'secure' => $secure,
 				 'httponly' => $httponly,
-			]);
+			]);*/
 
 		}
 
@@ -156,6 +178,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 	public function externalPaymentCallback()
 	{
+		$this->load->model('extension/payment/cardinity');
 		$this->load->language('extension/payment/cardinity');
 
 		//restore session from cookie
@@ -164,6 +187,8 @@ class ControllerExtensionPaymentCardinity extends Controller
 		//restore session from cookie
 		$this->session->start('SameSite',$_COOKIE['SameSite']);
 
+
+/*		
 		//get cookie data and decode
 		$sessionDataOnCookie = $_COOKIE["sessionData"];
 		$sessionDataOnCookie = unserialize(base64_decode($sessionDataOnCookie));
@@ -177,6 +202,22 @@ class ControllerExtensionPaymentCardinity extends Controller
 		$foundHash = hash_hmac('sha256', $serializedSession, $this->config->get('cardinity_project_secret'));
 				
 		$_SESSION[$_COOKIE['SameSite']] = $sessionDataOnCookie;
+*/
+
+
+		//get cookie data and decode
+		$sessionDataOnDB = $this->model_extension_payment_cardinity->fetchSession($_COOKIE['SameSite']);
+		$sessionDataOnDB = json_decode(base64_decode($sessionDataOnDB['session_data']), true);
+
+		//pluck target hash
+		$targetHash = $sessionDataOnDB['signature'];
+		unset($sessionDataOnDB['signature']);
+
+		//generate hash
+		$serializedSession = json_encode($sessionDataOnDB);
+		$foundHash = hash_hmac('sha256', $serializedSession, $this->config->get('cardinity_project_secret'));
+				
+		$_SESSION[$_COOKIE['SameSite']] = $sessionDataOnDB;
 
 
 		//$this->session->start('SameSite',$_COOKIE['SameSite']);
