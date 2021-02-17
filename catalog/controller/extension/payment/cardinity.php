@@ -5,7 +5,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 	public function index()
 	{
 
-		$this->setSessionIdInCookie();
+		
 
 		$this->load->language('extension/payment/cardinity');
 		/**
@@ -15,8 +15,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 		if ($this->config->get('payment_cardinity_external') == 1) {
 			$order_info = $this->model_checkout_order->getOrder($this->session->data['order_id']);
 
-			//for external callback
-			//$this->setSessionIdInCookie();
+			
 
 			if ($order_info) {
 				$this->load->model('extension/payment/cardinity');
@@ -38,6 +37,9 @@ class ControllerExtensionPaymentCardinity extends Controller
 				//these two are for website not for api
 				$attributes['button_confirm'] = $this->language->get('button_confirm');
 				$attributes['text_loading'] = $this->language->get('text_loading');
+
+				//for external callback
+				$this->setSession($formattedOrderId, $this->session->data['order_id'] );				
 
 				return $this->load->view('extension/payment/cardinity_external', $attributes);
 			}
@@ -71,8 +73,9 @@ class ControllerExtensionPaymentCardinity extends Controller
 		return $this->load->view('extension/payment/cardinity', $data);
 	}
 
-	public function setSessionIdInCookie()
+	private function setSession($payment_id, $order_id)
 	{
+		$this->load->model('extension/payment/cardinity');
 
 		$expire = time() + (10 * 60); // 10 min from now
 		$name = 'cardinitySessionId';
@@ -97,8 +100,52 @@ class ControllerExtensionPaymentCardinity extends Controller
 			'samesite' => $samesite,
 		]);
 
-		$this->testLog($this->session->getId());
-		$this->testLog(print_r($_COOKIE, true));
+		$rawSessionData = $this->session->data;// $_SESSION[$this->session->getId()];
+
+		$rawSessionData['current_order_id'] = $order_id;
+		////data serialized
+		$serializedSession = json_encode($rawSessionData);
+
+		//add signature to raw data, (signature generated from serialized session)
+		$rawSessionData['signature'] = hash_hmac('sha256', $serializedSession, $this->config->get('payment_cardinity_project_secret'));
+
+		//new datra *(generated from serialized session + signature)
+		$serializedSessionWithSignature  = json_encode($rawSessionData);
+
+		//$sessionDataValue = base64_encode($serializedSessionWithSignature);
+		$sessionDataValue = $serializedSessionWithSignature;
+
+
+		$this->model_extension_payment_cardinity->storeSession(array(
+			'session_id' => $this->session->getId(),
+			'session_data' => $sessionDataValue,
+		));
+
+		/*$this->testLog($this->session->getId());
+		$this->testLog(print_r($sessionDataValue, true));*/
+	}
+
+	private function getSession(){
+
+		$this->load->model('extension/payment/cardinity');
+
+		//get cookie data and decode
+		$sessionDataOnDB = $this->model_extension_payment_cardinity->fetchSession($_COOKIE['cardinitySessionId']);
+		//$sessionDataOnDB = json_decode(base64_decode($sessionDataOnDB['session_data']), true);
+		$sessionDataOnDB = json_decode(($sessionDataOnDB['session_data']), true);
+
+		//pluck target hash
+		$targetHash = $sessionDataOnDB['signature'];
+		unset($sessionDataOnDB['signature']);
+
+		//generate hash
+		$serializedSession = json_encode($sessionDataOnDB);
+		$foundHash = hash_hmac('sha256', $serializedSession, $this->config->get('payment_cardinity_project_secret'));
+
+		$this->session->data = $sessionDataOnDB;
+
+		return $sessionDataOnDB['current_order_id'];
+		
 	}
 
 	public function externalPaymentCallback()
@@ -108,6 +155,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 		//restore session based on sessionId from cookie
 		$this->session->start($_COOKIE['cardinitySessionId']);
+		$this->getSession();
 
 		$message = '';
 		ksort($_POST);
@@ -122,7 +170,6 @@ class ControllerExtensionPaymentCardinity extends Controller
 		error_reporting(E_ALL);
 
 		if ($signature == $_POST['signature'] && $_POST['status'] == 'approved') {
-
 
 			$this->model_extension_payment_cardinity->addOrder(array(
 				'order_id'   => $_POST['order_id'],
@@ -249,7 +296,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 					if ($payment->getStatus() == 'pending') {
 
-						$this->testLog("pay obj".print_r($payment, true));
+						//$this->testLog("pay obj".print_r($payment, true));
 						$this->testLog("is v2 ".$payment->isThreedsV2());
 						//exit();
 
@@ -257,8 +304,8 @@ class ControllerExtensionPaymentCardinity extends Controller
 							//3dsv2
 							$authorization_information = $payment->getThreeDS2Data();
 
-							//setSessionIdInCookie
-							$this->setSessionIdInCookie();
+							//setSession
+							$this->setSession($payment->getId(), $this->session->data['order_id'] );
 
 							$encryption_data = array(
 								'order_id' => $this->session->data['order_id'],
@@ -285,8 +332,8 @@ class ControllerExtensionPaymentCardinity extends Controller
 							//3ds
 							$authorization_information = $payment->getAuthorizationInformation();
 
-							//setSessionIdInCookie
-							$this->setSessionIdInCookie();
+							//setSession
+							$this->setSession($payment->getId(), $this->session->data['order_id'] );
 
 							$encryption_data = array(
 								'order_id' => $this->session->data['order_id'],
@@ -383,6 +430,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 		//restore session based on sessionId from cookie
 		$this->session->start($_COOKIE['cardinitySessionId']);
+		$currentOrderId = $this->getSession();	
 
 		$this->load->model('extension/payment/cardinity');
 		$this->load->language('extension/payment/cardinity');
@@ -392,7 +440,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 		$error = '';
 
 		$encryption_data = array(
-			'order_id' => $this->session->data['order_id'],
+			'order_id' => $currentOrderId,
 			'secret'   => $this->config->get('payment_cardinity_secret')
 		);
 
@@ -471,6 +519,8 @@ class ControllerExtensionPaymentCardinity extends Controller
 		$hash = $this->encryption->encrypt($this->config->get('config_encryption'), json_encode($encryption_data));
 		error_reporting(E_ALL);
 
+		$this->testLog("Generated hash  b4 ". $hash);
+
 		if (hash_equals($hash, $this->request->post['hash'])) {
 			$success = true;
 
@@ -491,25 +541,29 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 	public function threeDSecureCallbackV2()
 	{
+		$this->load->model('extension/payment/cardinity');
+		$this->load->language('extension/payment/cardinity');
 
 		//restore session based on sessionId from cookie
 		$this->session->start($_COOKIE['cardinitySessionId']);
-
-		$this->load->model('extension/payment/cardinity');
-		$this->load->language('extension/payment/cardinity');
+		$currentOrderId = $this->getSession();	
 
 		$success = false;
 
 		$error = '';
 
 		$encryption_data = array(
-			'order_id' => $this->session->data['order_id'],
+			'order_id' => $currentOrderId,
 			'secret'   => $this->config->get('payment_cardinity_secret')
 		);
 
 		error_reporting(0);
 		$hash = $this->encryption->encrypt($this->config->get('config_encryption'), json_encode($encryption_data));
 		error_reporting(E_ALL);
+
+		$this->testLog("Original hash ". $hash);
+		$this->testLog("Recieved hash ". $this->request->post['threeDSSessionData']);
+		$this->testLog("POST     hash ". $_POST['threeDSSessionData']);
 
 
 		//proper hash found on callback
@@ -553,8 +607,8 @@ class ControllerExtensionPaymentCardinity extends Controller
 						//3ds v1 retry
 						$authorization_information = $payment->getAuthorizationInformation();
 	
-						//setSessionIdInCookie
-						$this->setSessionIdInCookie();
+						//setSession
+						$this->setSession($payment->getId(), $this->session->data['order_id'] );
 	
 	
 						/*3d sec form */
@@ -599,9 +653,11 @@ class ControllerExtensionPaymentCardinity extends Controller
 				}
 								
 			} else {
+				$this->testLog("invalid order id");
 				$error = $this->language->get('error_unknown_order_id');
 			}
 		} else {
+			$this->testLog("invalid hash");
 			$error = $this->language->get('error_invalid_hash');
 		}
 
@@ -724,7 +780,6 @@ class ControllerExtensionPaymentCardinity extends Controller
 	public function logTransaction($array)
 	{
 		$this->testLog("Logging transaction");
-		$this->testLog(print_r($array, true));
 		$this->load->model('extension/payment/cardinity');
 		$this->model_extension_payment_cardinity->logTransaction($array);
 	}

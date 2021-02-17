@@ -1,4 +1,4 @@
-# Cardinity module for Opencart v 3.0.x
+# Cardinity module v 2.7.0 for Opencart v 3.0.x
 
 Accept card payment using Cardinity payment gateway on your opencart 3.x shop.
 
@@ -46,6 +46,7 @@ If you get any problems feel free to ask for help via <a href="mailto:techsuppor
 
 # Changelog
 
+January 2021 Bugfix on double finalize attempt, bugfix missing https on external
 January 2021 Transaction log added
 December 2020 Installer added
 November 2020 3dsv2 update
