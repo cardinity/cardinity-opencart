@@ -31,10 +31,10 @@ $_['entry_order_status']	= 'Order Status';
 $_['entry_geo_zone']		= 'Geo Zone';
 $_['entry_status']			= 'Status';
 $_['entry_sort_order']		= 'Sort Order';
-$_['entry_key']				= 'Key';
-$_['entry_secret']			= 'Secret';
+$_['entry_key']				= 'Consumer Key';
+$_['entry_secret']			= 'Consumer Secret';
 $_['entry_debug']			= 'Debug';
-$_['project_key']			= 'Project Key';
+$_['project_key']			= 'Project ID';
 $_['project_secret']		= 'Project Secret';
 $_['entry_external']		= 'External checkout';
 
@@ -44,6 +44,14 @@ $_['entry_log']		        = 'Transaction Log';
 // Help
 $_['help_debug']			= 'Enabling debug will write sensitive data to a log file. You should always disable unless instructed otherwise.';
 $_['help_total']			= 'The checkout total the order must reach before this payment method becomes active.';
+$_['help_external']			= 'Enabling external checkout will perform the payment in our secured hosted server, instead of internally.';
+
+
+$_['help_consumer_cred']	= 'Consumer Key and Consumer Secret can be found in your cardinity dashboard > Integration > API settings. Only required if using internal method.';
+$_['help_project_cred']		= 'Project ID and Project Secret can be found in your cardinity dashboard > Integration > API settings. Only required if using external hosted method.';
+
+
+
 
 // Button
 $_['button_refund']			= 'Refund';

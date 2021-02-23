@@ -1,20 +1,26 @@
 <?php
 class ControllerExtensionPaymentCardinity extends Controller
 {
+	
+	private $external_mode_only;
 
 	public function index()
 	{
 
-		
-
 		$this->load->language('extension/payment/cardinity');
+
+		//if using old version
+		if(version_compare(phpversion(), '7.2.5', '<') == true){
+			$this->external_mode_only = true;
+		}
+	
+			
 		/**
 		 * Check if external payment option is available,
 		 * if so, then proceed with external checkout options.
 		 */
 		if ($this->config->get('payment_cardinity_external') == 1) {
 			$order_info = $this->model_checkout_order->getOrder($this->session->data['order_id']);
-
 			
 
 			if ($order_info) {
@@ -90,15 +96,27 @@ class ControllerExtensionPaymentCardinity extends Controller
 		//$secure = false;
 		//$samesite = 'Lax';
 
-		//only usin post 7.3 syntax as opencart 3 minimum requirement is 7.3
-		setcookie($name, $value, [
-			'expires' => $expire,
-			'path' => $path,
-			'domain' => $domain,
-			'secure' => $secure,
-			'httponly' => false,
-			'samesite' => $samesite,
-		]);
+		if (PHP_VERSION_ID < 70300) {
+			setcookie (
+				$name, 
+				$value,
+				$expire,
+				"$path; SameSite=$samesite",
+				$domain,
+				$secure,
+				false
+			);
+		}else{
+			//only usin post 7.3 syntax as opencart 3 minimum requirement is 7.3
+			setcookie($name, $value, [
+				'expires' => $expire,
+				'path' => $path,
+				'domain' => $domain,
+				'secure' => $secure,
+				'httponly' => false,
+				'samesite' => $samesite,
+			]);
+		}
 
 		$rawSessionData = $this->session->data;// $_SESSION[$this->session->getId()];
 

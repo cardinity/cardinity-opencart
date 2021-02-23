@@ -2,12 +2,22 @@
 class ControllerExtensionPaymentCardinity extends Controller {
 	private $error = array();
 
-	public function index() {
-		$this->load->language('extension/payment/cardinity');
+	private $external_mode_only;
 
-		$this->document->setTitle($this->language->get('heading_title'));
+	public function index() {
 
 		$this->load->model('setting/setting');
+		$this->load->language('extension/payment/cardinity');
+
+		//if using old version
+		if(version_compare(phpversion(), '7.2.5', '<') == true){
+			$this->external_mode_only = true;
+			$this->config->set('payment_cardinity_external', 1);
+			$this->model_setting_setting->editSettingValue('payment_cardinity', 'payment_cardinity_external', 1); 
+		}
+	
+
+		$this->document->setTitle($this->language->get('heading_title'));
 
 		if (($this->request->server['REQUEST_METHOD'] == 'POST') && $this->validate()) {
 			$this->model_setting_setting->editSetting('payment_cardinity', $this->request->post);
@@ -135,6 +145,7 @@ class ControllerExtensionPaymentCardinity extends Controller {
 		$data['footer'] = $this->load->controller('common/footer');
 
 
+		$data['php_version_old'] = $this->external_mode_only;
 		$data['entry_log'] = $this->language->get('entry_log');
 		$data['yearNow'] = (int) Date("Y");
 		$data['entry_log_action'] = $this->url->link('extension/payment/cardinity/getTransactions',  'user_token=' . $this->session->data['user_token'] . '&type=payment', true);
@@ -266,7 +277,7 @@ class ControllerExtensionPaymentCardinity extends Controller {
 
 		$check_credentials = true;
 
-		if (version_compare(phpversion(), '7.3', '<')) {
+		if (version_compare(phpversion(), '5.4', '<')) {
 			$this->error['warning'] = $this->language->get('error_php_version');
 		}
 
@@ -276,36 +287,55 @@ class ControllerExtensionPaymentCardinity extends Controller {
 			$check_credentials = false;
 		}
 
-		if (!$this->request->post['payment_cardinity_key']) {
-			$this->error['key'] = $this->language->get('error_key');
-
-			$check_credentials = false;
-		}
-
-		if (!$this->request->post['payment_cardinity_secret']) {
-			$this->error['secret'] = $this->language->get('error_secret');
-
-			$check_credentials = false;
-		}
-
-		if (!class_exists('Cardinity\Client')) {
-			$this->error['warning'] = $this->language->get('error_composer');
-
-			$check_credentials = false;
-		}
-
-		if ($check_credentials) {
-			$client = $this->model_extension_payment_cardinity->createClient(array(
-				'key'    => $this->request->post['payment_cardinity_key'],
-				'secret' => $this->request->post['payment_cardinity_secret']
-			));
-
-			$verify_credentials = $this->model_extension_payment_cardinity->verifyCredentials($client);
-
-			if (!$verify_credentials) {
-				$this->error['warning'] = $this->language->get('error_connection');
+		
+		if ($this->request->post['payment_cardinity_external'] == 0) {
+			//Validate required feilds for internal integration
+			if (!$this->request->post['payment_cardinity_key']) {
+				$this->error['key'] = $this->language->get('error_key');
+	
+				$check_credentials = false;
 			}
+	
+			if (!$this->request->post['payment_cardinity_secret']) {
+				$this->error['secret'] = $this->language->get('error_secret');
+	
+				$check_credentials = false;
+			}
+			if (!class_exists('Cardinity\Client')) {
+				$this->error['warning'] = $this->language->get('error_composer');
+	
+				$check_credentials = false;
+			}
+
+			if ($check_credentials) {
+				$client = $this->model_extension_payment_cardinity->createClient(array(
+					'key'    => $this->request->post['payment_cardinity_key'],
+					'secret' => $this->request->post['payment_cardinity_secret']
+				));
+	
+				$verify_credentials = $this->model_extension_payment_cardinity->verifyCredentials($client);
+	
+				if (!$verify_credentials) {
+					$this->error['warning'] = $this->language->get('error_connection');
+				}
+			}
+
+		}elseif ($this->request->post['payment_cardinity_external'] == 1) {			
+			//validate required fields for external hosted payment
+			if (!$this->request->post['payment_cardinity_project_key']) {
+				$this->error['project_key'] = $this->language->get('error_project_key');
+	
+				$check_credentials = false;
+			}
+	
+			if (!$this->request->post['payment_cardinity_project_secret']) {
+				$this->error['project_secret'] = $this->language->get('error_project_secret');
+	
+				$check_credentials = false;
+			}			
 		}
+
+		
 
 		if ($this->error && !isset($this->error['warning'])) {
 			$this->error['warning'] = $this->language->get('error_warning');

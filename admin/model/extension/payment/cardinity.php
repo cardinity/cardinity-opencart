@@ -1,5 +1,5 @@
 <?php
-require_once DIR_SYSTEM . 'library/cardinity/vendor/autoload.php';
+require_once DIR_SYSTEM . 'library/cardinity/cardinity-php-sdk.php';
 
 use Cardinity\Client;
 use Cardinity\Method\Payment;
