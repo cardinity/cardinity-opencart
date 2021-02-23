@@ -1,4 +1,4 @@
-# Cardinity module v 2.7.0 for Opencart v 3.0.x
+# Cardinity module v 2.8.0 for Opencart v 3.0.x
 
 Accept card payment using Cardinity payment gateway on your opencart 3.x shop.
 
@@ -6,7 +6,7 @@ This also includes the temporary fix of opencart version 3.0.x. The new versions
 
 # Requirements
 
-Opencart > 3.0.x , PHP > 7.2.5
+Opencart > 3.0.x , PHP minimum > 5.4.5 , recommended >= 7.2.5
 
 # How to Install
 

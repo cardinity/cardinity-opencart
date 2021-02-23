@@ -21,14 +21,14 @@
     {% endif %}
 
 	{% if php_version_old %}
-    <div class="alert alert-warning alert-dismissible"><i class="fa fa-exclamation-circle"></i> You are using a older version of php, You can still use the payment method via external payment. To unlock additional features update your php.
+    <div class="alert alert-warning alert-dismissible"><i class="fa fa-exclamation-circle"></i> You are using a older version of php, You can still use the payment method via external payment. To unlock additional features update your php to >= 7.2.5.
       <button type="button" class="close" data-dismiss="alert">&times;</button>
     </div>
     {% endif %}
 
     <div class="panel panel-default">
       <div class="panel-heading">
-        <h3 class="panel-title"><i class="fa fa-pencil"></i> {{ text_edit }}</h3><span class='pull-right'>v2.7.1 for oc3.0.x</span>
+        <h3 class="panel-title"><i class="fa fa-pencil"></i> {{ text_edit }}</h3><span class='pull-right'>v2.8.0 for oc3.0.x</span>
       </div>
       <div class="panel-body">
         <form action="{{ action }}" method="post" enctype="multipart/form-data" id="form-payment" class="form-horizontal">

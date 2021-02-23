@@ -84,6 +84,10 @@ class ModelExtensionPaymentCardinity extends Model {
 	}
 
 	public function install() {
+
+		$this->db->query("DROP TABLE IF EXISTS `" . DB_PREFIX . "cardinity_order`;");
+		$this->db->query("DROP TABLE IF EXISTS `" . DB_PREFIX . "cardinity_session`;");
+
 		$this->db->query("
 			CREATE TABLE IF NOT EXISTS `" . DB_PREFIX . "cardinity_order` (
 			  `cardinity_order_id` INT(11) NOT NULL AUTO_INCREMENT,

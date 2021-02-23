@@ -164,6 +164,13 @@ class ControllerExtensionPaymentCardinity extends Controller {
 	}
 
 	public function getPayment() {
+
+		if(version_compare(phpversion(), '7.2.5', '<') == true){
+			$this->response->setOutput($this->load->view('extension/payment/cardinity_order_na'));
+			return;
+		}
+
+		
 		$this->load->language('extension/payment/cardinity');
 
 		$this->load->model('extension/payment/cardinity');
