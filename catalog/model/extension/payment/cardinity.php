@@ -7,7 +7,14 @@ use Cardinity\Exception as CardinityException;
 
 class ModelExtensionPaymentCardinity extends Model {
 	public function addOrder($data) {
-		$this->db->query("INSERT INTO `" . DB_PREFIX . "cardinity_order` SET `order_id` = '" . (int)$data['order_id'] . "', `payment_id` = '" . $this->db->escape($data['payment_id']) . "'");
+
+		$orderByThisId= $this->getOrder($data['order_id']);
+		if ($orderByThisId) {
+			//avoid creating duplicate order by same id	
+		}else{
+			$this->db->query("INSERT INTO `" . DB_PREFIX . "cardinity_order` SET `order_id` = '" . (int)$data['order_id'] . "', `payment_id` = '" . $this->db->escape($data['payment_id']) . "'");
+		}
+		
 	}
 
 	public function getOrder($order_id) {
@@ -15,6 +22,7 @@ class ModelExtensionPaymentCardinity extends Model {
 
 		return $query->row;
 	}
+
 
 	public function updateOrder($data) {
 		$this->db->query("UPDATE `" . DB_PREFIX . "cardinity_order` SET `payment_status` = '" . $this->db->escape($data['payment_status']) . "' WHERE `payment_id` = '" . $this->db->escape($data['payment_id']) . "'");

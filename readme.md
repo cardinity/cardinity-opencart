@@ -1,4 +1,4 @@
-# Cardinity module v 2.8.0 for Opencart v 3.0.x
+# Cardinity module v 2.8.1 for Opencart v 3.0.x
 
 Accept card payment using Cardinity payment gateway on your opencart 3.x shop.
 
