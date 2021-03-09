@@ -254,6 +254,8 @@ class ControllerExtensionPaymentCardinity extends Controller
 				$order_country = $order_info['shipping_iso_code_2'];
 			}
 
+			$this->testLog("order info data ". print_r($order_info, true));
+
 			$payment_data = array(
 				'amount'			 => (float)$this->currency->format($order_info['total'], $order_info['currency_code'], $order_info['currency_value'], false),
 				'currency'			 => $order_info['currency_code'],
@@ -281,6 +283,9 @@ class ControllerExtensionPaymentCardinity extends Controller
                     ],
                 ],
 			);
+
+			
+			$this->testLog("payment creation data ".print_r($payment_data, true));
 
 			try {
 				$payment = $this->model_extension_payment_cardinity->createPayment($this->config->get('payment_cardinity_key'), $this->config->get('payment_cardinity_secret'), $payment_data);
