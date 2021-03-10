@@ -254,8 +254,6 @@ class ControllerExtensionPaymentCardinity extends Controller
 				$order_country = $order_info['shipping_iso_code_2'];
 			}
 
-			$this->testLog("order info data ". print_r($order_info, true));
-
 			$payment_data = array(
 				'amount'			 => (float)$this->currency->format($order_info['total'], $order_info['currency_code'], $order_info['currency_value'], false),
 				'currency'			 => $order_info['currency_code'],
@@ -287,17 +285,41 @@ class ControllerExtensionPaymentCardinity extends Controller
 			
 			$this->testLog("payment creation data ".print_r($payment_data, true));
 
-			try {
-				$payment = $this->model_extension_payment_cardinity->createPayment($this->config->get('payment_cardinity_key'), $this->config->get('payment_cardinity_secret'), $payment_data);
-			} catch (Cardinity\Exception\Declined $exception) {
-				$this->failedOrder($this->language->get('error_payment_declined'), $this->language->get('error_payment_declined'));
+			//check if payment repeat
+			$cardinity_order = $this->model_extension_payment_cardinity->getOrder($this->session->data['order_id']);
+			
 
-				$json['redirect'] = $this->url->link('checkout/checkout', '', true);
-			} catch (Exception $exception) {
-				$this->failedOrder();
+			if($cardinity_order &&  $cardinity_order['payment_id']) {
+				//payment was already created				
+				try {
+					$payment_exist = $this->model_extension_payment_cardinity->getPayment($this->config->get('payment_cardinity_key'), $this->config->get('payment_cardinity_secret'), $cardinity_order['payment_id']);
 
-				$json['redirect'] = $this->url->link('checkout/checkout', '', true);
+					if($payment_exist->getStatus() == 'approved'){
+						$payment_exist = $payment_exist;
+					}
+				} catch (Cardinity\Exception\Declined $exception) {
+					$this->failedOrder($this->language->get('error_payment_declined'), $this->language->get('error_payment_declined'));
+	
+					$json['redirect'] = $this->url->link('checkout/checkout', '', true);
+				} catch (Exception $exception) {
+					$this->failedOrder();
+	
+					$json['redirect'] = $this->url->link('checkout/checkout', '', true);
+				}
+			}else{
+				try {
+					$payment = $this->model_extension_payment_cardinity->createPayment($this->config->get('payment_cardinity_key'), $this->config->get('payment_cardinity_secret'), $payment_data);
+				} catch (Cardinity\Exception\Declined $exception) {
+					$this->failedOrder($this->language->get('error_payment_declined'), $this->language->get('error_payment_declined'));
+	
+					$json['redirect'] = $this->url->link('checkout/checkout', '', true);
+				} catch (Exception $exception) {
+					$this->failedOrder();
+	
+					$json['redirect'] = $this->url->link('checkout/checkout', '', true);
+				}
 			}
+			
 
 			$successful_order_statuses = array(
 				'approved',
@@ -319,7 +341,6 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 					if ($payment->getStatus() == 'pending') {
 
-						//$this->testLog("pay obj".print_r($payment, true));
 						$this->testLog("is v2 ".$payment->isThreedsV2());
 						//exit();
 
@@ -586,7 +607,6 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 		$this->testLog("Original hash ". $hash);
 		$this->testLog("Recieved hash ". $this->request->post['threeDSSessionData']);
-		$this->testLog("POST     hash ". $_POST['threeDSSessionData']);
 
 
 		//proper hash found on callback

@@ -48,6 +48,25 @@ class ModelExtensionPaymentCardinity extends Model {
 		}
 	}
 
+	public function getPayment($key, $secret, $payment_id){
+		$client = Client::create(array(
+			'consumerKey'    => $key,
+			'consumerSecret' => $secret,
+		));
+
+		$method = new Payment\Get($payment_id);
+
+		try {
+			$payment = $client->call($method);
+
+			return $payment;
+		} catch (Exception $exception) {
+			$this->exception($exception);
+
+			throw $exception;
+		}
+	}
+
 	public function createExternalPayment($project_key, $project_secret, $payment_data) {
 		$attributes = [
 			"amount" => $payment_data['amount'],
