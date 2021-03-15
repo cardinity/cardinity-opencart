@@ -7,6 +7,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 	public function index()
 	{
 
+		
 		$this->load->language('extension/payment/cardinity');
 
 		//if using old version
@@ -20,6 +21,8 @@ class ControllerExtensionPaymentCardinity extends Controller
 		 * if so, then proceed with external checkout options.
 		 */
 		if ($this->config->get('payment_cardinity_external') == 1) {
+			
+			$this->load->model('checkout/order');
 			$order_info = $this->model_checkout_order->getOrder($this->session->data['order_id']);
 			
 
