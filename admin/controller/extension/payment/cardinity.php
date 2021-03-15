@@ -353,7 +353,13 @@ class ControllerExtensionPaymentCardinity extends Controller {
 
 	public function getTransactions(){
 		
-		$fileName = 'crd-transactions-'.$this->request->post['cardinity_trns_year'].'-'. $this->request->post['cardinity_trns_month'];
+		if(isset($this->request->post['cardinity_error_log'])){
+			$fileName = 'cardinity';
+		}else{
+			$fileName = 'crd-transactions-'.$this->request->post['cardinity_trns_year'].'-'. $this->request->post['cardinity_trns_month'];
+		}	
+		
+		
 		$fileToDownload =  $fileName .'.log';
 		
 		// Process download

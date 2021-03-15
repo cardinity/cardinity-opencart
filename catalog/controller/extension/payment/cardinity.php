@@ -86,39 +86,49 @@ class ControllerExtensionPaymentCardinity extends Controller
 	{
 		$this->load->model('extension/payment/cardinity');
 
+		$this->testLog("setting session for payment ID ".$payment_id);
+		$this->testLog("********************* order ID ".$order_id);
+
 		$expire = time() + (10 * 60); // 10 min from now
 		$name = 'cardinitySessionId';
 		$value = $this->session->getId();
 
+		
 		$path = ini_get('session.cookie_path') ?? '/';
 		$domain = ini_get('session.cookie_domain') ?? '';
 
+		
 		$secure = true;
 		$samesite = 'None';
 
 		//$secure = false;
 		//$samesite = 'Lax';
 
-		if (PHP_VERSION_ID < 70300) {
-			setcookie (
-				$name, 
-				$value,
-				$expire,
-				"$path; SameSite=$samesite",
-				$domain,
-				$secure,
-				false
-			);
-		}else{
-			//only usin post 7.3 syntax as opencart 3 minimum requirement is 7.3
-			setcookie($name, $value, [
-				'expires' => $expire,
-				'path' => $path,
-				'domain' => $domain,
-				'secure' => $secure,
-				'httponly' => false,
-				'samesite' => $samesite,
-			]);
+		try {
+
+			if (PHP_VERSION_ID < 70300) {
+				setcookie (
+					$name, 
+					$value,
+					$expire,
+					"$path; SameSite=$samesite",
+					$domain,
+					$secure,
+					false
+				);
+			}else{
+				//only usin post 7.3 syntax as opencart 3 minimum requirement is 7.3
+				setcookie($name, $value, [
+					'expires' => $expire,
+					'path' => $path,
+					'domain' => $domain,
+					'secure' => $secure,
+					'httponly' => false,
+					'samesite' => $samesite,
+				]);
+			}
+		} catch (Exception $e) {
+			$this->testLog("Setcookie exception :".$e->getMessage() );
 		}
 
 		$rawSessionData = $this->session->data;// $_SESSION[$this->session->getId()];
@@ -135,12 +145,18 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 		//$sessionDataValue = base64_encode($serializedSessionWithSignature);
 		$sessionDataValue = $serializedSessionWithSignature;
+		
+		$this->testLog($this->session->getId());
+		$this->testLog(print_r($sessionDataValue, true));
 
-
-		$this->model_extension_payment_cardinity->storeSession(array(
-			'session_id' => $this->session->getId(),
-			'session_data' => $sessionDataValue,
-		));
+		try {
+			$this->model_extension_payment_cardinity->storeSession(array(
+				'session_id' => $this->session->getId(),
+				'session_data' => $sessionDataValue,
+			));	
+		} catch (Exception $e) {
+			$this->testLog("db error".$e->getMessage());
+		}
 
 		/*$this->testLog($this->session->getId());
 		$this->testLog(print_r($sessionDataValue, true));*/
@@ -288,17 +304,20 @@ class ControllerExtensionPaymentCardinity extends Controller
 			
 			$this->testLog("payment creation data ".print_r($payment_data, true));
 
+
 			//check if payment repeat
-			$cardinity_order = $this->model_extension_payment_cardinity->getOrder($this->session->data['order_id']);
-			
+			$cardinity_order = $this->model_extension_payment_cardinity->getOrder($this->session->data['order_id']);		
+			$paid_already = false;
 
 			if($cardinity_order &&  $cardinity_order['payment_id']) {
+
+				$this->testLog("repeating order");
 				//payment was already created				
 				try {
 					$payment_exist = $this->model_extension_payment_cardinity->getPayment($this->config->get('payment_cardinity_key'), $this->config->get('payment_cardinity_secret'), $cardinity_order['payment_id']);
 
 					if($payment_exist->getStatus() == 'approved'){
-						$payment_exist = $payment_exist;
+						$paid_already = true;
 					}
 				} catch (Cardinity\Exception\Declined $exception) {
 					$this->failedOrder($this->language->get('error_payment_declined'), $this->language->get('error_payment_declined'));
@@ -309,6 +328,12 @@ class ControllerExtensionPaymentCardinity extends Controller
 	
 					$json['redirect'] = $this->url->link('checkout/checkout', '', true);
 				}
+			}
+			
+			
+			if($paid_already && $payment_exist){
+				$this->testLog("repeating payed");
+				$payment = $payment_exist;
 			}else{
 				try {
 					$payment = $this->model_extension_payment_cardinity->createPayment($this->config->get('payment_cardinity_key'), $this->config->get('payment_cardinity_secret'), $payment_data);
@@ -354,6 +379,8 @@ class ControllerExtensionPaymentCardinity extends Controller
 							//setSession
 							$this->setSession($payment->getId(), $this->session->data['order_id'] );
 
+							$this->testLog("Session set to database");
+
 							$encryption_data = array(
 								'order_id' => $this->session->data['order_id'],
 								'secret'   => $this->config->get('payment_cardinity_secret')
@@ -381,6 +408,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 							//setSession
 							$this->setSession($payment->getId(), $this->session->data['order_id'] );
+							$this->testLog("Session set to database");
 
 							$encryption_data = array(
 								'order_id' => $this->session->data['order_id'],
@@ -430,6 +458,8 @@ class ControllerExtensionPaymentCardinity extends Controller
 		} else {
 			$json['error'] = $error;
 		}
+
+		$this->testLog("attempting response");
 
 		$this->response->addHeader('Content-Type: application/json');
 		$this->response->setOutput(json_encode($json));
