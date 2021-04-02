@@ -393,7 +393,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 							$json['3dsv2'] = array(
 								'acs_url'   => $authorization_information->getAcsUrl(),
 								'creq'   	=> $authorization_information->getCreq(),
-								'threeDSSessionData' => $payment->getOrderId(),
+								'payment_order_id' => $payment->getOrderId(),
 								'hash'    	=> $hash
 							);
 
@@ -603,7 +603,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 			$data['acs_url'] = $this->request->post['acs_url'];
 			$data['creq'] = $this->request->post['creq'];
-			$data['threeDSSessionData'] = $hash;
+			$data['threeDSSessionData'] = $this->model_extension_payment_cardinity->encodeBase64Url($hash);
 		} else {
 			$this->failedOrder($this->language->get('error_invalid_hash'));
 
@@ -638,12 +638,14 @@ class ControllerExtensionPaymentCardinity extends Controller
 		$hash = $this->encryption->encrypt($this->config->get('config_encryption'), json_encode($encryption_data));
 		error_reporting(E_ALL);
 
+		$recieved_hash =  $this->model_extension_payment_cardinity->decodeBase64url($this->request->post['threeDSSessionData']);
+
 		$this->testLog("Original hash ". $hash);
-		$this->testLog("Recieved hash ". $this->request->post['threeDSSessionData']);
+		$this->testLog("Recieved hash ". $recieved_hash);
 
 
 		//proper hash found on callback
-		if (hash_equals($hash, $this->request->post['threeDSSessionData'])) {
+		if (hash_equals($hash, $recieved_hash)) {
 			$order = $this->model_extension_payment_cardinity->getOrder($encryption_data['order_id']);
 
 			if ($order && $order['payment_id']) {

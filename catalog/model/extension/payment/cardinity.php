@@ -6,6 +6,7 @@ use Cardinity\Method\Payment;
 use Cardinity\Exception as CardinityException;
 
 class ModelExtensionPaymentCardinity extends Model {
+	
 	public function addOrder($data) {
 
 		$orderByThisId= $this->getOrder($data['order_id']);
@@ -186,6 +187,42 @@ class ModelExtensionPaymentCardinity extends Model {
 			'EUR'
 		);
 	}
+
+
+	/**
+	 * Encode data to Base64URL
+	 * @param string $data
+	 * @return boolean|string
+	 */
+	function encodeBase64Url($data)
+	{
+		$b64 = base64_encode($data);
+
+		if ($b64 === false) {
+			return false;
+		}
+
+		// Convert Base64 to Base64URL by replacing “+” with “-” and “/” with “_”
+		$url = strtr($b64, '+/', '-_');
+
+		// Remove padding character from the end of line and return the Base64URL result
+		return rtrim($url, '=');
+	}
+
+	/**
+	 * Decode data from Base64URL
+	 * @param string $data
+	 * @param boolean $strict
+	 * @return boolean|string
+	 */
+	function decodeBase64url($data, $strict = false)
+	{
+		// Convert Base64URL to Base64 by replacing “-” with “+” and “_” with “/”
+		$b64 = strtr($data, '-_', '+/');
+
+		return base64_decode($b64, $strict);
+	}
+
 
 	public function log($data, $class_step = 6, $function_step = 6) {
 		if ($this->config->get('payment_cardinity_debug')) {
