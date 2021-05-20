@@ -3,6 +3,7 @@
 $_['heading_title']			= 'Cardinity';
 
 // Text
+$_['text_editing_shop']     = 'Select the shop you want to assign the API keys to';
 $_['text_extension']		= 'Extensions';
 $_['text_success']			= 'Success: You have modified Cardinity payment module!';
 $_['text_edit']             = 'Edit Cardinity';
@@ -26,6 +27,7 @@ $_['column_amount']			= 'Amount';
 $_['column_description']	= 'Description';
 
 // Entry
+$_['entry_editing_shop']	= 'Shop';
 $_['entry_total']			= 'Total';
 $_['entry_order_status']	= 'Order Status';
 $_['entry_geo_zone']		= 'Geo Zone';
@@ -59,6 +61,10 @@ $_['button_refund']			= 'Refund';
 // Error
 $_['error_key']				= 'Key Required!';
 $_['error_secret']			= 'Secret Required!';
+
+$_['error_project_key']		= 'Project Key Required!';
+$_['error_project_secret']	= 'Project Secret Required!';
+
 $_['error_composer']		= 'Unable to load Cardinity SDK. Please download a compiled vendor folder or run composer.';
 $_['error_php_version']		= 'Minimum version of PHP 5.4.0 is required!';
 $_['error_permission']		= 'Warning: You do not have permission to modify payment Cardinity!';
