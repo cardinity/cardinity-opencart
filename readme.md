@@ -66,7 +66,7 @@ Find the latest version of this extension here: https://github.com/cardinity/car
 | ------------- |-----------------------------------------------------|------------|
 | <b>OpenCart 3.0.x</b> 
 | Latest (recommended) release for OpenCart 3.0.x     
-| <a href="https://github.com/cardinity/cardinity-opencart/releases/tag/v2.8.4-for-opencart-3.0.x">Download</a> 
+| <a href="https://github.com/cardinity/cardinity-opencart/releases/tag/v2.8.5-for-opencart-3.0.x">Download</a> 
 |
 | <b>OpenCart 2.3.x</b> 
 | Latest (recommended) release for OpenCart 2.3.x; <br> - encryption dependency changed to built in 
@@ -76,46 +76,6 @@ Find the latest version of this extension here: https://github.com/cardinity/car
 | Latest (recommended) release for OpenCart 1.5.x; <br> - added readme 
 | <a href="https://github.com/cardinity/cardinity-opencart/releases/tag/v1.5.x-1.0.1">Download</a> 
 |
-
-<details show>
-  <summary>Older releases for 3.0.x</summary>
-  
-| Version       | Description                                         |Link        |
-| ------------- |-----------------------------------------------------|------------|
-| v2.5.1 
-|- Update cardinity SDK to v3; 
-<br>- 3d secure updated to v2; 
-<br> - 3d secure fallbacks to v1 on fail; 
-<br> - Onepage checkout compatibility; 
-<br> - Installer compatible; 
-<br> - Improved transaction log; 
-<br> 
-<details show><summary><b>NOTE</b></summary>if you are patching from fresh opencart installation you will need to update the vendor files. use the included composer.json file to rebuild requirements.</details>
-|  <a href="https://github.com/cardinity/cardinity-opencart/releases/tag/3.0.x-patch-5"> Download</a> 
-|
-| 3.0.x-3dsfallback-patch1 | onepage checkout and 3dsv2 fallback patch | <a href="https://github.com/cardinity/cardinity-opencart/releases/tag/3.0.x-3dsfallback-patch1"> Download</a> 
-|
-  </details>
-
-<details show>
-  <summary>Older releases for 2.3.x</summary>
-  
-| Version       | Description                                         |Link        |
-| ------------- |-----------------------------------------------------|------------|
-| v2.3.x-onepage-patch | patch onepage checkout compatibility | <a href="https://github.com/cardinity/cardinity-opencart/releases/tag/v2.3.x-onepage-patch">Download</a> |
-| v2.3.x-session-fix | added alternate syntax for older php version | <a href="https://github.com/cardinity/cardinity-opencart/releases/tag/v2.3.x-session-fix">Download</a> |
-| 2.3.x-Samesite | removed debug artifacts and set config for https | <a href="https://github.com/cardinity/cardinity-opencart/releases/tag/2.3.x-Samesite">Download</a> |
-| 2.3.x  | First version | <a href="https://github.com/cardinity/cardinity-opencart/releases/tag/2.3.x">Download</a> |
-  </details>
-  
-  
-<details show>
-  <summary>Older releases for 1.5.x</summary>
-  
-| Version       | Description                                         |Link        |
-| ------------- |-----------------------------------------------------|------------|  
-| v1.0.2 for OC 1.5.x | 3ds v2 support | <a href="https://github.com/cardinity/cardinity-opencart/releases/tag/v1.0.2-for-opencart-1.5.x">Download</a> |
-  </details>
 
 ### Having problems?  
 
