@@ -66,7 +66,7 @@ Find the latest version of this extension here: https://github.com/cardinity/car
 | ------------- |-----------------------------------------------------|------------|
 | <b>OpenCart 3.0.x</b> 
 | Latest (recommended) release for OpenCart 3.0.x     
-| <a href="https://github.com/cardinity/cardinity-opencart/releases/tag/v2.8.5-for-opencart-3.0.x">Download</a> 
+| <a href="https://github.com/cardinity/cardinity-opencart/releases/tag/v2.8.6-for-opencart-3.0.x">Download</a> 
 |
 | <b>OpenCart 2.3.x</b> 
 | Latest (recommended) release for OpenCart 2.3.x; <br> - encryption dependency changed to built in 
