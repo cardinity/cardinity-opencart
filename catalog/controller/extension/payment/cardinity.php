@@ -1,30 +1,30 @@
 <?php
 class ControllerExtensionPaymentCardinity extends Controller
 {
-	
+
 	private $external_mode_only;
 
 	public function index()
 	{
 
-		
+
 		$this->load->language('extension/payment/cardinity');
 
 		//if using old version
-		if(version_compare(phpversion(), '7.2.5', '<') == true){
+		if (version_compare(phpversion(), '7.2.5', '<') == true) {
 			$this->external_mode_only = true;
 		}
-	
-			
+
+
 		/**
 		 * Check if external payment option is available,
 		 * if so, then proceed with external checkout options.
 		 */
 		if ($this->config->get('payment_cardinity_external') == 1) {
-			
+
 			$this->load->model('checkout/order');
 			$order_info = $this->model_checkout_order->getOrder($this->session->data['order_id']);
-			
+
 
 			if ($order_info) {
 				$this->load->model('extension/payment/cardinity');
@@ -39,7 +39,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 					$formattedOrderId = $orderId;
 				}
 				$data['order_id'] = $formattedOrderId; //$this->session->data['order_id'];
-				$data['description'] = 'OC' . $this->session->data['order_id'];
+				$data['description'] = $this->session->getId(); //  'OC' . $this->session->data['order_id'];
 				$data['return_url'] = $this->url->link('extension/payment/cardinity/externalPaymentCallback', '', true);
 				$attributes = $this->model_extension_payment_cardinity->createExternalPayment($this->config->get('payment_cardinity_project_key'), $this->config->get('payment_cardinity_project_secret'), $data);
 
@@ -48,7 +48,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 				$attributes['text_loading'] = $this->language->get('text_loading');
 
 				//for external callback
-				$this->setSession($formattedOrderId, $this->session->data['order_id'] );				
+				$this->setSession();
 
 				return $this->load->view('extension/payment/cardinity_external', $attributes);
 			}
@@ -82,58 +82,12 @@ class ControllerExtensionPaymentCardinity extends Controller
 		return $this->load->view('extension/payment/cardinity', $data);
 	}
 
-	private function setSession($payment_id, $order_id)
+	private function setSession()
 	{
-		$this->load->model('extension/payment/cardinity');
 
-		$this->testLog("setting session for payment ID ".$payment_id);
-		$this->testLog("********************* order ID ".$order_id);
+		$rawSessionData = $this->session->data; // $_SESSION[$this->session->getId()];
 
-		$expire = time() + (10 * 60); // 10 min from now
-		$name = 'cardinitySessionId';
-		$value = $this->session->getId();
-
-		
-		$path = ini_get('session.cookie_path') ?? '/';
-		$domain = ini_get('session.cookie_domain') ?? '';
-
-		
-		$secure = true;
-		$samesite = 'None';
-
-		//$secure = false;
-		//$samesite = 'Lax';
-
-		try {
-
-			if (PHP_VERSION_ID < 70300) {
-				setcookie (
-					$name, 
-					$value,
-					$expire,
-					"$path; SameSite=$samesite",
-					$domain,
-					$secure,
-					false
-				);
-			}else{
-				//only usin post 7.3 syntax as opencart 3 minimum requirement is 7.3
-				setcookie($name, $value, [
-					'expires' => $expire,
-					'path' => $path,
-					'domain' => $domain,
-					'secure' => $secure,
-					'httponly' => false,
-					'samesite' => $samesite,
-				]);
-			}
-		} catch (Exception $e) {
-			$this->testLog("Setcookie exception :".$e->getMessage() );
-		}
-
-		$rawSessionData = $this->session->data;// $_SESSION[$this->session->getId()];
-
-		$rawSessionData['current_order_id'] = $order_id;
+		//$rawSessionData['current_order_id'] = $order_id;
 		////data serialized
 		$serializedSession = json_encode($rawSessionData);
 
@@ -145,29 +99,29 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 		//$sessionDataValue = base64_encode($serializedSessionWithSignature);
 		$sessionDataValue = $serializedSessionWithSignature;
-		
-		$this->testLog($this->session->getId());
-		$this->testLog(print_r($sessionDataValue, true));
+
+		/*$this->testLog($this->session->getId());
+		$this->testLog(print_r($sessionDataValue, true));*/
 
 		try {
 			$this->model_extension_payment_cardinity->storeSession(array(
 				'session_id' => $this->session->getId(),
 				'session_data' => $sessionDataValue,
-			));	
+			));
 		} catch (Exception $e) {
-			$this->testLog("db error".$e->getMessage());
+			$this->testLog("db error" . $e->getMessage());
 		}
 
 		/*$this->testLog($this->session->getId());
 		$this->testLog(print_r($sessionDataValue, true));*/
 	}
 
-	private function getSession(){
+	private function getSession($sessionId)
+	{
 
 		$this->load->model('extension/payment/cardinity');
 
-		//get cookie data and decode
-		$sessionDataOnDB = $this->model_extension_payment_cardinity->fetchSession($_COOKIE['cardinitySessionId']);
+		$sessionDataOnDB = $this->model_extension_payment_cardinity->fetchSession($sessionId);
 		//$sessionDataOnDB = json_decode(base64_decode($sessionDataOnDB['session_data']), true);
 		$sessionDataOnDB = json_decode(($sessionDataOnDB['session_data']), true);
 
@@ -181,18 +135,18 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 		$this->session->data = $sessionDataOnDB;
 
-		return $sessionDataOnDB['current_order_id'];
-		
+		return $this->session->data['order_id']; //$sessionDataOnDB['order_id'];
+
 	}
 
 	public function externalPaymentCallback()
 	{
-		$this->load->language('extension/payment/cardinity');		
+		$this->load->language('extension/payment/cardinity');
 		$this->load->model('extension/payment/cardinity');
 
-		//restore session based on sessionId from cookie
-		$this->session->start($_COOKIE['cardinitySessionId']);
-		$this->getSession();
+		//restore session based on sessionId from description
+		$this->session->start($_POST['description']);
+		$this->getSession($_POST['description']);
 
 		$message = '';
 		ksort($_POST);
@@ -210,32 +164,32 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 			$this->model_extension_payment_cardinity->addOrder(array(
 				'order_id'   => $_POST['order_id'],
-				'payment_id' =>$_POST['id'],
+				'payment_id' => $_POST['id'],
 			));
 			$this->model_extension_payment_cardinity->updateOrder(array(
 				'payment_status' => 'approved_external',
-				'payment_id' =>$_POST['id'],
+				'payment_id' => $_POST['id'],
 			));
 
 			$this->logTransaction(array(
 				'orderId' => $_POST['order_id'],
 				'transactionId' =>  $_POST['id'],
 				'3dsVersion' => 'unknown (external)',
-				'amount' => $_POST['amount'] ." ".$_POST['currency'],
+				'amount' => $_POST['amount'] . " " . $_POST['currency'],
 				'status' => 'approved'
 			));
-			
+
 			$this->finalizeOrder($_POST);
 			$this->response->redirect($this->url->link('checkout/success', '', true));
 		} else {
 
 			$this->model_extension_payment_cardinity->addOrder(array(
 				'order_id'   => $_POST['order_id'],
-				'payment_id' =>$_POST['id'],
+				'payment_id' => $_POST['id'],
 			));
 			$this->model_extension_payment_cardinity->updateOrder(array(
 				'payment_status' => 'failed_external',
-				'payment_id' =>$_POST['id'],
+				'payment_id' => $_POST['id'],
 			));
 
 			$this->failedOrder("Card was declined", $this->language->get("error_payment_declined"));
@@ -261,10 +215,12 @@ class ControllerExtensionPaymentCardinity extends Controller
 		if (!$error) {
 			$order_info = $this->model_checkout_order->getOrder($this->session->data['order_id']);
 
-			if (strlen($order_info['order_id']) < 2) {
-				$order_id = '0' . $order_info['order_id'];
+
+			$order_id = $order_info['order_id'];
+			if ($order_id < 100) {
+				$order_id = str_pad($order_id, 3, '0', STR_PAD_LEFT);
 			} else {
-				$order_id = $order_info['order_id'];
+				$order_id = $order_id;
 			}
 
 			if (!empty($order_info['payment_iso_code_2'])) {
@@ -277,6 +233,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 				'amount'			 => (float)$this->currency->format($order_info['total'], $order_info['currency_code'], $order_info['currency_value'], false),
 				'currency'			 => $order_info['currency_code'],
 				'order_id'			 => $order_id,
+				'description' 		 => $this->session->getId(),
 				'country'            => $order_country,
 				'payment_method'     => 'card',
 				'payment_instrument' => array(
@@ -287,67 +244,65 @@ class ControllerExtensionPaymentCardinity extends Controller
 					'holder'	=> $this->request->post['holder']
 				),
 				'threeds2_data' =>  [
-                    "notification_url" => $this->url->link('extension/payment/cardinity/threeDSecureCallbackV2', '', true),
-                    "browser_info" => [
-                        "accept_header" => "text/html",
-                        "browser_language" => $this->request->post['browser_language'],
-                        "screen_width" => (int)$this->request->post['screen_width'],
-                        "screen_height" => (int)$this->request->post['screen_height'],
-                        'challenge_window_size' => "full-screen",
-                        "user_agent" => $_SERVER['HTTP_USER_AGENT'],
-                        "color_depth" => (int)$this->request->post['color_depth'],
-                        "time_zone" => (int)$this->request->post['time_zone']
-                    ],
-                ],
+					"notification_url" => $this->url->link('extension/payment/cardinity/threeDSecureCallbackV2', '', true),
+					"browser_info" => [
+						"accept_header" => "text/html",
+						"browser_language" => $this->request->post['browser_language'],
+						"screen_width" => (int)$this->request->post['screen_width'],
+						"screen_height" => (int)$this->request->post['screen_height'],
+						'challenge_window_size' => "full-screen",
+						"user_agent" => $_SERVER['HTTP_USER_AGENT'],
+						"color_depth" => (int)$this->request->post['color_depth'],
+						"time_zone" => (int)$this->request->post['time_zone']
+					],
+				],
 			);
 
-			
-			$this->testLog("payment creation data ".print_r($payment_data, true));
 
 
 			//check if payment repeat
-			$cardinity_order = $this->model_extension_payment_cardinity->getOrder($this->session->data['order_id']);		
+			$cardinity_order = $this->model_extension_payment_cardinity->getOrder($this->session->data['order_id']);
 			$paid_already = false;
 
-			if($cardinity_order &&  $cardinity_order['payment_id']) {
+			if ($cardinity_order &&  $cardinity_order['payment_id']  && $cardinity_order['payment_status'] !='failed_3dsv1' ) {
 
 				$this->testLog("repeating order");
 				//payment was already created				
 				try {
 					$payment_exist = $this->model_extension_payment_cardinity->getPayment($this->config->get('payment_cardinity_key'), $this->config->get('payment_cardinity_secret'), $cardinity_order['payment_id']);
 
-					if($payment_exist->getStatus() == 'approved'){
+					if ($payment_exist->getStatus() == 'approved') {
 						$paid_already = true;
 					}
 				} catch (Cardinity\Exception\Declined $exception) {
 					$this->failedOrder($this->language->get('error_payment_declined'), $this->language->get('error_payment_declined'));
-	
+
 					$json['redirect'] = $this->url->link('checkout/checkout', '', true);
 				} catch (Exception $exception) {
 					$this->failedOrder();
-	
+
 					$json['redirect'] = $this->url->link('checkout/checkout', '', true);
 				}
 			}
-			
-			
-			if($paid_already && $payment_exist){
+
+
+			if ($paid_already && $payment_exist) {
 				$this->testLog("repeating payed");
 				$payment = $payment_exist;
-			}else{
+			} else {
 				try {
 					$payment = $this->model_extension_payment_cardinity->createPayment($this->config->get('payment_cardinity_key'), $this->config->get('payment_cardinity_secret'), $payment_data);
 				} catch (Cardinity\Exception\Declined $exception) {
 					$this->failedOrder($this->language->get('error_payment_declined'), $this->language->get('error_payment_declined'));
-	
+
 					$json['redirect'] = $this->url->link('checkout/checkout', '', true);
 				} catch (Exception $exception) {
 					$this->failedOrder();
-	
+
 					$json['redirect'] = $this->url->link('checkout/checkout', '', true);
 				}
 			}
-			
+
 
 			$successful_order_statuses = array(
 				'approved',
@@ -369,61 +324,43 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 					if ($payment->getStatus() == 'pending') {
 
-						$this->testLog("is v2 ".$payment->isThreedsV2());
+						$this->testLog("is v2 " . $payment->isThreedsV2());
 						//exit();
 
-						if($payment->isThreedsV2() && !$payment->isThreedsV1()){
+						if ($payment->isThreedsV2() && !$payment->isThreedsV1()) {
 							//3dsv2
 							$authorization_information = $payment->getThreeDS2Data();
 
 							//setSession
-							$this->setSession($payment->getId(), $this->session->data['order_id'] );
+							$this->setSession();
 
 							$this->testLog("Session set to database");
 
-							$encryption_data = array(
-								'order_id' => $this->session->data['order_id'],
-								'secret'   => $this->config->get('payment_cardinity_secret')
-							);
-
-							error_reporting(0);
-							$hash = $this->encryption->encrypt($this->config->get('config_encryption'), json_encode($encryption_data));
-							error_reporting(E_ALL);
-
+							
 							$json['3dsv2'] = array(
 								'acs_url'   => $authorization_information->getAcsUrl(),
 								'creq'   	=> $authorization_information->getCreq(),
-								'payment_order_id' => $payment->getOrderId(),
-								'hash'    	=> $hash
+								'session_id' => $this->session->getId(),
 							);
 
 							$this->model_extension_payment_cardinity->updateOrder(array(
 								'payment_status'   => 'pending_3dsv2',
 								'payment_id' => $payment->getId()
 							));
-
-						}else{
+						} else {
 							//3ds
 							$authorization_information = $payment->getAuthorizationInformation();
 
 							//setSession
-							$this->setSession($payment->getId(), $this->session->data['order_id'] );
+							$this->setSession();
 							$this->testLog("Session set to database");
 
-							$encryption_data = array(
-								'order_id' => $this->session->data['order_id'],
-								'secret'   => $this->config->get('payment_cardinity_secret')
-							);
-
-							error_reporting(0);
-							$hash = $this->encryption->encrypt($this->config->get('config_encryption'), json_encode($encryption_data));
-							error_reporting(E_ALL);
-
+						
 							$json['3ds'] = array(
 								'url'     => $authorization_information->getUrl(),
 								'PaReq'   => $authorization_information->getData(),
 								'TermUrl' => $this->url->link('extension/payment/cardinity/threeDSecureCallback', '', true),
-								'hash'    => $hash
+								'session_id' => $this->session->getId(),
 							);
 
 							$this->model_extension_payment_cardinity->updateOrder(array(
@@ -431,8 +368,6 @@ class ControllerExtensionPaymentCardinity extends Controller
 								'payment_id' => $payment->getId()
 							));
 						}
-
-
 					} elseif ($payment->getStatus() == 'approved') {
 
 						$this->model_extension_payment_cardinity->updateOrder(array(
@@ -444,11 +379,11 @@ class ControllerExtensionPaymentCardinity extends Controller
 							'orderId' => $this->session->data['order_id'],
 							'transactionId' =>  $payment->getId(),
 							'3dsVersion' => 'none',
-							'amount' => $payment->getAmount()." ".$payment->getCurrency(),
+							'amount' => $payment->getAmount() . " " . $payment->getCurrency(),
 							'status' => 'approved'
 						));
 
-						
+
 						$this->finalizeOrder($payment);
 
 						$json['redirect'] = $this->url->link('checkout/success', '', true);
@@ -471,33 +406,11 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 		$this->load->language('extension/payment/cardinity');
 
-		$success = false;
-		$redirect = false;
-
-		$encryption_data = array(
-			'order_id' => $this->session->data['order_id'],
-			'secret'   => $this->config->get('payment_cardinity_secret')
-		);
-
-		error_reporting(0);
-		$hash = $this->encryption->encrypt($this->config->get('config_encryption'), json_encode($encryption_data));
-		error_reporting(E_ALL);
-
-		if (hash_equals($hash, $this->request->post['hash'])) {
-			$success = true;
-
-			$data['url'] = $this->request->post['url'];
-			$data['PaReq'] = $this->request->post['PaReq'];
-			$data['TermUrl'] = $this->request->post['TermUrl'];
-			$data['MD'] = $hash;
-		} else {
-			$this->failedOrder($this->language->get('error_invalid_hash'));
-
-			$redirect = $this->url->link('checkout/checkout', '', true);
-		}
-
-		$data['success'] = $success;
-		$data['redirect'] = $redirect;
+		$data['url'] = $this->request->post['url'];
+		$data['PaReq'] = $this->request->post['PaReq'];
+		$data['TermUrl'] = $this->request->post['TermUrl'];
+		$data['MD'] = $this->request->post['session_id'];
+		$data['success'] = true;
 
 		$this->response->setOutput($this->load->view('extension/payment/cardinity_3ds', $data));
 	}
@@ -505,9 +418,9 @@ class ControllerExtensionPaymentCardinity extends Controller
 	public function threeDSecureCallback()
 	{
 
-		//restore session based on sessionId from cookie
-		$this->session->start($_COOKIE['cardinitySessionId']);
-		$currentOrderId = $this->getSession();	
+		//restore session based on sessionId from MD
+		$this->session->start($_POST['MD']);
+		$currentOrderId = $this->getSession($_POST['MD']);
 
 		$this->load->model('extension/payment/cardinity');
 		$this->load->language('extension/payment/cardinity');
@@ -516,39 +429,26 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 		$error = '';
 
-		$encryption_data = array(
-			'order_id' => $currentOrderId,
-			'secret'   => $this->config->get('payment_cardinity_secret')
-		);
+		$order = $this->model_extension_payment_cardinity->getOrder($currentOrderId);
 
-		error_reporting(0);
-		$hash = $this->encryption->encrypt($this->config->get('config_encryption'), json_encode($encryption_data));
-		error_reporting(E_ALL);
+		if ($order && $order['payment_id']) {
+			$payment = $this->model_extension_payment_cardinity->finalizePayment($this->config->get('payment_cardinity_key'), $this->config->get('payment_cardinity_secret'), $order['payment_id'], $this->request->post['PaRes']);
 
-		//proper hash found on callback
-		if (hash_equals($hash, $this->request->post['MD'])) {
-			$order = $this->model_extension_payment_cardinity->getOrder($encryption_data['order_id']);
-
-			if ($order && $order['payment_id']) {
-				$payment = $this->model_extension_payment_cardinity->finalizePayment($this->config->get('payment_cardinity_key'), $this->config->get('payment_cardinity_secret'), $order['payment_id'], $this->request->post['PaRes']);
-
-				if ($payment && $payment->getStatus() == 'approved') {
-					$success = true;
-				} else {
-
-					$this->model_extension_payment_cardinity->updateOrder(array(
-						'payment_status'   => 'failed_3dsv1',
-						'payment_id' => $order['payment_id']
-					));
-
-					$error = $this->language->get('error_finalizing_payment');
-				}
+			if ($payment && $payment->getStatus() == 'approved') {
+				$success = true;
 			} else {
-				$error = $this->language->get('error_unknown_order_id');
+
+				$this->model_extension_payment_cardinity->updateOrder(array(
+					'payment_status'   => 'failed_3dsv1',
+					'payment_id' => $order['payment_id']
+				));
+
+				$error = $this->language->get('error_finalizing_payment');
 			}
 		} else {
-			$error = $this->language->get('error_invalid_hash');
+			$error = $this->language->get('error_unknown_order_id');
 		}
+
 
 		if ($success) {
 
@@ -561,7 +461,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 				'orderId' => $this->session->data['order_id'],
 				'transactionId' =>  $payment->getId(),
 				'3dsVersion' => 'v1',
-				'amount' => $payment->getAmount()." ".$payment->getCurrency(),
+				'amount' => $payment->getAmount() . " " . $payment->getCurrency(),
 				'status' => 'approved'
 			));
 
@@ -570,7 +470,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 			$this->response->redirect($this->url->link('checkout/success', '', true));
 		} else {
 
-			
+
 			$this->failedOrder($error);
 
 			$this->response->redirect($this->url->link('checkout/checkout', '', true));
@@ -584,34 +484,11 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 		$this->load->language('extension/payment/cardinity');
 
-		$success = false;
-		$redirect = false;
-
-		$encryption_data = array(
-			'order_id' => $this->session->data['order_id'],
-			'secret'   => $this->config->get('payment_cardinity_secret')
-		);
-
-		error_reporting(0);
-		$hash = $this->encryption->encrypt($this->config->get('config_encryption'), json_encode($encryption_data));
-		error_reporting(E_ALL);
-
-		$this->testLog("Generated hash  b4 ". $hash);
-
-		if (hash_equals($hash, $this->request->post['hash'])) {
-			$success = true;
-
 			$data['acs_url'] = $this->request->post['acs_url'];
 			$data['creq'] = $this->request->post['creq'];
-			$data['threeDSSessionData'] = $this->model_extension_payment_cardinity->encodeBase64Url($hash);
-		} else {
-			$this->failedOrder($this->language->get('error_invalid_hash'));
+			$data['threeDSSessionData'] = $this->session->getId();
 
-			$redirect = $this->url->link('checkout/checkout', '', true);
-		}
-
-		$data['success'] = $success;
-		$data['redirect'] = $redirect;
+		$data['success'] = true;
 
 		$this->response->setOutput($this->load->view('extension/payment/cardinity_3dsv2', $data));
 	}
@@ -621,40 +498,21 @@ class ControllerExtensionPaymentCardinity extends Controller
 		$this->load->model('extension/payment/cardinity');
 		$this->load->language('extension/payment/cardinity');
 
-		//restore session based on sessionId from cookie
-		$this->session->start($_COOKIE['cardinitySessionId']);
-		$currentOrderId = $this->getSession();	
+		//restore session based on sessionId
+		$this->session->start($_POST['threeDSSessionData']);
+		$currentOrderId = $this->getSession($_POST['threeDSSessionData']);
 
 		$success = false;
 
-		$error = '';
-
-		$encryption_data = array(
-			'order_id' => $currentOrderId,
-			'secret'   => $this->config->get('payment_cardinity_secret')
-		);
-
-		error_reporting(0);
-		$hash = $this->encryption->encrypt($this->config->get('config_encryption'), json_encode($encryption_data));
-		error_reporting(E_ALL);
-
-		$recieved_hash =  $this->model_extension_payment_cardinity->decodeBase64url($this->request->post['threeDSSessionData']);
-
-		$this->testLog("Original hash ". $hash);
-		$this->testLog("Recieved hash ". $recieved_hash);
-
-
-		//proper hash found on callback
-		if (hash_equals($hash, $recieved_hash)) {
-			$order = $this->model_extension_payment_cardinity->getOrder($encryption_data['order_id']);
+		$order = $this->model_extension_payment_cardinity->getOrder($currentOrderId);
 
 			if ($order && $order['payment_id']) {
 
 
-				if($order && strpos($order['payment_status'], 'approved') !== false){
+				if ($order && strpos($order['payment_status'], 'approved') !== false) {
 					//payment already finalized
-					$success = true;	
-				}else{
+					$success = true;
+				} else {
 
 					$payment = $this->model_extension_payment_cardinity->finalize3dv2Payment($this->config->get('payment_cardinity_key'), $this->config->get('payment_cardinity_secret'), $order['payment_id'], $this->request->post['cres']);
 
@@ -664,57 +522,48 @@ class ControllerExtensionPaymentCardinity extends Controller
 							'payment_status'   => 'approved_3dsv2',
 							'payment_id' => $payment->getId()
 						));
-	
+
 						$this->logTransaction(array(
 							'orderId' => $this->session->data['order_id'],
 							'transactionId' =>  $payment->getId(),
 							'3dsVersion' => 'v2',
-							'amount' => $payment->getAmount()." ".$payment->getCurrency(),
+							'amount' => $payment->getAmount() . " " . $payment->getCurrency(),
 							'status' => 'approved'
 						));
-	
+
 						$success = true;
 					} elseif ($payment && $payment->getStatus() == 'pending') {
 						//3dsv2 failed but v1 is pending
-	
+
 						$this->model_extension_payment_cardinity->updateOrder(array(
 							'payment_status'   => 'fallback_3dsv1',
 							'payment_id' => $payment->getId()
 						));
-	
+
 						//3ds v1 retry
 						$authorization_information = $payment->getAuthorizationInformation();
-	
+
 						//setSession
-						$this->setSession($payment->getId(), $this->session->data['order_id'] );
-	
-	
-						/*3d sec form */
-	
-						$encryption_data = array(
-							'order_id' => $this->session->data['order_id'],
-							'secret'   => $this->config->get('payment_cardinity_secret')
-						);
-	
-						error_reporting(0);
-						$hash = $this->encryption->encrypt($this->config->get('config_encryption'), json_encode($encryption_data));
-						error_reporting(E_ALL);
-	
+						$this->setSession();
+
+
+						
+
 						$data['url'] = $authorization_information->getUrl();
 						$data['PaReq'] = $authorization_information->getData();
 						$data['TermUrl'] = $this->url->link('extension/payment/cardinity/threeDSecureCallback', '', true);
-						$data['MD'] = $hash;
+						$data['MD'] = $this->session->getId();
 						$data['success'] = true;
 						$data['redirect'] = false;
-	
-	
+
+
 						echo '
 						<h3>Threeds v2 validation failed, retrying for v1 in 3 seconds.</h3>
 						<p>If browser does not redirect press "Proceed"</p>
-						<form id="ThreeDForm" name="ThreeDForm" method="POST" action="'.$data['url'].'">
-							<input type="hidden" name="PaReq" value="'.$data['PaReq'] .'" />
-							<input type="hidden" name="TermUrl" value="'.$data['TermUrl'].'" />
-							<input type="hidden" name="MD" value="'.$data['MD'].'" />
+						<form id="ThreeDForm" name="ThreeDForm" method="POST" action="' . $data['url'] . '">
+							<input type="hidden" name="PaReq" value="' . $data['PaReq'] . '" />
+							<input type="hidden" name="TermUrl" value="' . $data['TermUrl'] . '" />
+							<input type="hidden" name="MD" value="' . $data['MD'] . '" />
 							<input type="submit" value="Proceed" />
 						</form>
 						<script type="text/javascript">
@@ -723,24 +572,17 @@ class ControllerExtensionPaymentCardinity extends Controller
 							};
 						</script>';
 						exit();
-	
-	
-					} else  {
+					} else {
 						$error = $this->language->get('error_finalizing_payment');
 					}
 				}
-								
 			} else {
 				$this->testLog("invalid order id");
 				$error = $this->language->get('error_unknown_order_id');
 			}
-		} else {
-			$this->testLog("invalid hash");
-			$error = $this->language->get('error_invalid_hash');
-		}
 
 		if ($success) {
-			
+
 			$this->finalizeOrder($payment);
 
 			$this->response->redirect($this->url->link('checkout/success', '', true));

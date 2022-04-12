@@ -6,6 +6,9 @@ class ControllerExtensionPaymentCardinity extends Controller {
 
 	public function index() {
 
+		$this->load->model('extension/payment/cardinity');
+		$this->model_extension_payment_cardinity->createMissingTables();
+
 		$this->load->model('setting/setting');
 		$this->load->model('setting/store');
 		$this->load->language('extension/payment/cardinity');
