@@ -162,9 +162,11 @@ class ModelExtensionPaymentCardinity extends Model {
 			$status = false;
 		}
 
+		/*
 		if (!in_array($this->session->data['currency'], $this->getSupportedCurrencies())) {
 			$status = false;
 		}
+		*/
 
 		$method_data = array();
 
