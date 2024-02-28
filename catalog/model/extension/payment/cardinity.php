@@ -162,10 +162,6 @@ class ModelExtensionPaymentCardinity extends Model {
 			$status = false;
 		}
 
-		if (!in_array($this->session->data['currency'], $this->getSupportedCurrencies())) {
-			$status = false;
-		}
-
 		$method_data = array();
 
 		if ($status) {
@@ -180,15 +176,7 @@ class ModelExtensionPaymentCardinity extends Model {
 		return $method_data;
 	}
 
-	public function getSupportedCurrencies() {
-		return array(
-			'USD',
-			'GBP',
-			'EUR'
-		);
-	}
-
-
+	
 	/**
 	 * Encode data to Base64URL
 	 * @param string $data

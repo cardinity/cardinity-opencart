@@ -9,4 +9,4 @@ mkdir ./upload
 cp -R admin ./upload/admin
 cp -R catalog ./upload/catalog
 cp -R system ./upload/system
-zip -r oc3.0.x-cardinity-2.8.7.ocmod.zip upload
+zip -r oc3.0.x-cardinity-2.8.8.ocmod.zip upload
