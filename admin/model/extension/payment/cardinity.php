@@ -66,6 +66,7 @@ class ModelExtensionPaymentCardinity extends Model {
 
 		try {
 			$refund = $client->call($method);
+            $this->log("Refund data".print_r($refund, true));
 
 			return $refund;
 		} catch (Exception $e) {

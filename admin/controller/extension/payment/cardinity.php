@@ -330,7 +330,19 @@ class ControllerExtensionPaymentCardinity extends Controller {
 		$refund = $this->model_extension_payment_cardinity->refundPayment($client, $this->request->post['payment_id'], (float)number_format($this->request->post['amount'], 2), $this->request->post['description']);
 
 		if ($refund) {
-			$success = $this->language->get('text_success_action');
+            if($refund->isApproved()){
+                $success = $this->language->get('refund_approved');
+            }else if($refund->isProcessing()){
+                $success = $this->language->get('refund_processing');
+            }else {
+                $error = $this->language->get('refund_declined');
+            }
+            $json['refund'] = array(
+                'date_added'  => date($this->language->get('datetime_format'), strtotime($refund->getCreated())),
+                'amount'	  => $this->currency->format($refund->getAmount(), $refund->getCurrency(), '1.00000000', true),
+                'status' =>  $refund->getStatus(),
+                'description' =>  $refund->getDescription(),
+            );
 		} else {
 			$error = $this->language->get('text_error_generic');
 		}

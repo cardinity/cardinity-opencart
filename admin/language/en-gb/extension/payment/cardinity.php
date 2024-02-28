@@ -70,3 +70,7 @@ $_['error_php_version']		= 'Minimum version of PHP 5.4.0 is required!';
 $_['error_permission']		= 'Warning: You do not have permission to modify payment Cardinity!';
 $_['error_connection']		= 'There was a problem establishing a connection to the Cardinity API. Please check your Key and Secret settings.';
 $_['error_warning']			= 'Warning: Please check the form carefully for errors!';
+
+$_['refund_approved']	= 'Refund Approved';
+$_['refund_declined']	= 'Refund Declined';
+$_['refund_processing']	= 'Refund Processing, check back later';
