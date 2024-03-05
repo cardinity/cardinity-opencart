@@ -2,3 +2,10 @@ system/library/cardinity/vendor/
 system/library/cardinity/composer.lock
 upload/
 *.zip
+/.idea/libraries/cardinity_opencart_3.xml
+/.idea/.gitignore
+/.idea/cardinity-opencart-3.iml
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/php.xml
+/.idea/vcs.xml
