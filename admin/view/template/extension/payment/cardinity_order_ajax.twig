@@ -96,23 +96,18 @@ $('.button-command').on('click', function() {
 				$('#button-settle').button('reset');
 			},
 			success: function(json) {
-                console.log("Testing");
-                console.log(json);
 				if (json.error) {
-				console.log(json.error);
 					$('#refund_alert').show();
 					$('#refund_alert').addClass('alert-danger');
 					$('#refund_alert').html('<i class="fa fa-check-circle"></i> ' + json.error);
 				}
 
 				if (json.success) {
-				    console.log('was h ere');
 					$('#refund_alert').addClass('alert-success');
 					$('#refund_alert').html('<i class="fa fa-exclamation-circle"></i> ' + json.success);
 					$('#refund_alert').show();
 				}
 				if(json.refund) {
-				    console.log(json.refund);
                     $("#refund-list-table tbody").prepend('<tr><td>'+json.refund.date_added+'</td><td>'+json.refund.amount+'</td><td>'+json.refund.status+'</td><td>'+json.refund.description+'</td></tr>');
                 }
 			}
