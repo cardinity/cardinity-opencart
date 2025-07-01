@@ -68,7 +68,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 		for ($i = 1; $i <= 12; $i++) {
 			$data['months'][] = array(
-				'text'  => strftime('%B', mktime(0, 0, 0, $i, 1, 2000)),
+				'text'  => date('F', mktime(0, 0, 0, $i, 1, 2000)),
 				'value' => sprintf('%02d', $i)
 			);
 		}
@@ -79,8 +79,8 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 		for ($i = $today['year']; $i < $today['year'] + 11; $i++) {
 			$data['years'][] = array(
-				'text'  => strftime('%Y', mktime(0, 0, 0, 1, 1, $i)),
-				'value' => strftime('%Y', mktime(0, 0, 0, 1, 1, $i))
+				'text'  => date('Y', mktime(0, 0, 0, 1, 1, $i)),
+				'value' => date('Y', mktime(0, 0, 0, 1, 1, $i))
 			);
 		}
 
@@ -373,7 +373,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 
 							$this->testLog("Session set to database");
 
-							
+
 							$json['3dsv2'] = array(
 								'acs_url'   => $authorization_information->getAcsUrl(),
 								'creq'   	=> $authorization_information->getCreq(),
@@ -392,7 +392,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 							$this->setSession();
 							$this->testLog("Session set to database");
 
-						
+
 							$json['3ds'] = array(
 								'url'     => $authorization_information->getUrl(),
 								'PaReq'   => $authorization_information->getData(),
@@ -583,7 +583,7 @@ class ControllerExtensionPaymentCardinity extends Controller
 						$this->setSession();
 
 
-						
+
 
 						$data['url'] = $authorization_information->getUrl();
 						$data['PaReq'] = $authorization_information->getData();
